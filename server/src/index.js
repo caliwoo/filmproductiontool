@@ -10,6 +10,7 @@ const contactsRouter = require('./routes/contacts');
 const scenesRouter = require('./routes/scenes');
 const shotsRouter = require('./routes/shots');
 const shootDaysRouter = require('./routes/shootDays');
+const scriptsRouter = require('./routes/scripts');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -23,6 +24,7 @@ app.use('/api/contacts', contactsRouter);
 app.use('/api/scenes', scenesRouter);
 app.use('/api/shots', shotsRouter);
 app.use('/api/shoot-days', shootDaysRouter);
+app.use('/api/scripts', scriptsRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

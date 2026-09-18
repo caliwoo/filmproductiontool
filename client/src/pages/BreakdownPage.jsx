@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import SceneCard from '../components/SceneCard.jsx';
+import ScriptImportDialog from '../components/ScriptImportDialog.jsx';
 
 export default function BreakdownPage() {
   const { projectId } = useOutletContext();
@@ -9,6 +10,7 @@ export default function BreakdownPage() {
   const [locations, setLocations] = useState([]);
   const [newSceneNumber, setNewSceneNumber] = useState('');
   const [error, setError] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
   function load() {
     Promise.all([
@@ -48,11 +50,27 @@ export default function BreakdownPage() {
     <div>
       <div className="page-header">
         <h2>Script Breakdown</h2>
-        <span className="muted">
-          {scenes.length} scenes &middot; {totalPages.toFixed(1)} pages
-        </span>
+        <div className="flex-row">
+          <span className="muted">
+            {scenes.length} scenes &middot; {totalPages.toFixed(1)} pages
+          </span>
+          <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
+            Import Script (PDF)
+          </button>
+        </div>
       </div>
       {error && <div className="error-banner">{error}</div>}
+
+      {showImport && (
+        <ScriptImportDialog
+          projectId={projectId}
+          onClose={() => setShowImport(false)}
+          onImported={() => {
+            setShowImport(false);
+            load();
+          }}
+        />
+      )}
 
       {scenes.map((scene) => (
         <SceneCard key={scene.id} scene={scene} locations={locations} onChange={load} onDelete={handleDeleteScene} />

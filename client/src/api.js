@@ -17,11 +17,27 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+async function upload(path, formData) {
+  const res = await fetch(`/api${path}`, { method: 'POST', body: formData });
+  if (!res.ok) {
+    let message = `Request failed: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.error) message = body.error;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+  return res.json();
+}
+
 const api = {
   get: (path) => request(path),
   post: (path, data) => request(path, { method: 'POST', body: JSON.stringify(data) }),
   put: (path, data) => request(path, { method: 'PUT', body: JSON.stringify(data) }),
   del: (path) => request(path, { method: 'DELETE' }),
+  upload,
 };
 
 export default api;
