@@ -1,0 +1,20 @@
+{
+  "name": "filmproductiontool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Film/video production management tool (StudioBinder-style) — script breakdown, shot lists, scheduling, and call sheets.",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
