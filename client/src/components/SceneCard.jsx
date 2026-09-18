@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api.js';
 import ShotList from './ShotList.jsx';
+import AiTagDialog from './AiTagDialog.jsx';
 
 const CATEGORIES = ['cast', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'extras', 'notes'];
 
@@ -9,6 +10,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [tagCategory, setTagCategory] = useState('cast');
   const [tagValue, setTagValue] = useState('');
   const [error, setError] = useState('');
+  const [showAiTag, setShowAiTag] = useState(false);
 
   const location = locations.find((l) => l.id === scene.location_id);
 
@@ -114,7 +116,28 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             onBlur={(e) => updateField('synopsis', e.target.value)}
           />
 
-          <div className="section-label">Breakdown Elements</div>
+          <div className="section-label flex-row" style={{ justifyContent: 'space-between' }}>
+            <span>Breakdown Elements</span>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowAiTag(true)}
+              style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 'normal', fontSize: 13 }}
+            >
+              ✨ AI Select
+            </button>
+          </div>
+
+          {showAiTag && (
+            <AiTagDialog
+              sceneId={scene.id}
+              onClose={() => setShowAiTag(false)}
+              onCommitted={() => {
+                setShowAiTag(false);
+                onChange();
+              }}
+            />
+          )}
+
           <div className="element-tags">
             {scene.elements.map((el) => (
               <span className={`tag ${el.category}`} key={el.id}>

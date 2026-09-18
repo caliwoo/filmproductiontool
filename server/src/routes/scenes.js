@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { suggestSceneElements } = require('../aiTagger');
 
 const router = express.Router();
 
@@ -119,6 +120,43 @@ router.post('/:sceneId/elements', (req, res) => {
 router.delete('/elements/:elementId', (req, res) => {
   db.prepare('DELETE FROM scene_elements WHERE id = ?').run(req.params.elementId);
   res.status(204).end();
+});
+
+router.post('/:sceneId/elements/bulk', (req, res) => {
+  const { elements } = req.body;
+  if (!Array.isArray(elements) || elements.length === 0) {
+    return res.status(400).json({ error: 'elements must be a non-empty array' });
+  }
+  const insert = db.prepare('INSERT INTO scene_elements (scene_id, category, value) VALUES (?, ?, ?)');
+  const insertedIds = [];
+  const tx = db.transaction((rows) => {
+    rows.forEach((e) => {
+      if (!e || !e.category || !e.value || !String(e.value).trim()) return;
+      const result = insert.run(req.params.sceneId, e.category, String(e.value).trim());
+      insertedIds.push(result.lastInsertRowid);
+    });
+  });
+  tx(elements);
+  const created = insertedIds.map((id) => db.prepare('SELECT * FROM scene_elements WHERE id = ?').get(id));
+  res.status(201).json(created);
+});
+
+// --- AI Select: suggest breakdown elements from the scene text via Claude ---
+
+router.post('/:sceneId/ai-tag', async (req, res) => {
+  const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId);
+  if (!scene) return res.status(404).json({ error: 'Scene not found' });
+
+  const existing = db
+    .prepare('SELECT category, value FROM scene_elements WHERE scene_id = ?')
+    .all(scene.id);
+
+  try {
+    const candidates = await suggestSceneElements(scene, existing);
+    res.json({ candidates });
+  } catch (err) {
+    res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
+  }
 });
 
 module.exports = router;
