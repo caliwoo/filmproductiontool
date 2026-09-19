@@ -25,6 +25,9 @@ export default function ProjectLayout() {
           <NavLink to="breakdown" className={({ isActive }) => (isActive ? 'active' : '')}>
             Script Breakdown
           </NavLink>
+          <NavLink to="shot-list" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Shot List
+          </NavLink>
           <NavLink to="schedule" className={({ isActive }) => (isActive ? 'active' : '')}>
             Schedule
           </NavLink>

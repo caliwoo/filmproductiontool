@@ -6,6 +6,7 @@ import SchedulePage from './pages/SchedulePage.jsx';
 import CallSheetPage from './pages/CallSheetPage.jsx';
 import ContactsPage from './pages/ContactsPage.jsx';
 import LocationsPage from './pages/LocationsPage.jsx';
+import ShotListPage from './pages/ShotListPage.jsx';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/projects/:projectId" element={<ProjectLayout />}>
         <Route index element={<Navigate to="breakdown" replace />} />
         <Route path="breakdown" element={<BreakdownPage />} />
+        <Route path="shot-list" element={<ShotListPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="schedule/:dayId/call-sheet" element={<CallSheetPage />} />
         <Route path="contacts" element={<ContactsPage />} />

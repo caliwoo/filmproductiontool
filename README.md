@@ -9,6 +9,7 @@ A film/video production management tool inspired by StudioBinder — script brea
 - **AI Select** — inside a scene, click "AI Select" to have Claude read that scene's heading and text and suggest breakdown elements (cast, props, wardrobe, etc.) it finds. Suggestions are shown in a checklist for you to review, edit, and select before anything is added — nothing is tagged automatically. Requires an `ANTHROPIC_API_KEY` (see below); without one, the button shows a clear "not configured" message instead of failing silently.
 - **PDF Breakdown Sheet** — every scene has a "PDF Breakdown" button that downloads a printable, industry-style breakdown sheet (breakdown/scene number, INT/EXT, set, day/night, page count, description, location, and a box per element category) generated on the fly from that scene's data.
 - **Shot List** — per-scene shots with size, angle, movement, equipment, and shot/not-shot status. Click "AI Suggest Shots" to have Claude draft a shot list from the scene's text; suggestions appear in an editable checklist and nothing is added until you commit.
+- **Shot List Report** — a project-wide "Shot List" page compiles every shot across every scene (with its scene, location, cast, and props) into one color-coded, industry-style table, viewable in the app and downloadable as a landscape PDF.
 - **Schedule** — organize scenes into shoot days (stripboard-lite), with date, general call time, location, and weather.
 - **Call Sheets** — auto-generated, printable call sheet per shoot day: scene lineup, cast needed, and individual crew/cast call times. Includes a print/PDF button.
 - **Cast & Crew** — contact directory (name, role, department, phone, email) shared across the project.
@@ -64,7 +65,7 @@ railway.json  Railway build/deploy config
 
 All endpoints are under `/api`:
 
-- `projects` — CRUD
+- `projects` — CRUD; `projects/:id/shot-list` returns the project's shots joined with scene/location/cast/props data; `projects/:id/shot-list-pdf` downloads it as a landscape PDF
 - `locations`, `contacts` — CRUD, filterable by `?projectId=`
 - `scenes` — CRUD, filterable by `?projectId=`; nested `scenes/:id/elements` for breakdown tags (`scenes/:id/elements/bulk` for a batch add); `scenes/:id/ai-tag` proposes breakdown elements via Claude (does not save them); `scenes/:id/breakdown-pdf` downloads a printable breakdown sheet; `scenes/reorder`
 - `scripts/parse` — upload a PDF (`multipart/form-data`, field `script`) and get back detected scenes for review; `scripts/import` — commit a reviewed scene list to a project
