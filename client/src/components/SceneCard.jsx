@@ -118,6 +118,13 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             </select>
           </div>
 
+          {!scene.location_id && (
+            <p className="muted" style={{ marginTop: 4 }}>
+              No location selected — pick one above and it will automatically fill in on the call sheet and PDF
+              breakdown sheet for this scene.
+            </p>
+          )}
+
           <textarea
             placeholder="Synopsis"
             style={{ width: '100%', marginTop: 10, minHeight: 50 }}

@@ -22,18 +22,27 @@ function box(doc, x, y, w, h) {
   doc.lineWidth(1).rect(x, y, w, h).stroke();
 }
 
-function labeledCell(doc, x, y, w, h, label, value, { valueSize = 10, align = 'left' } = {}) {
+function labeledCell(doc, x, y, w, h, label, value, { valueSize = 10, align = 'left', emptyMessage } = {}) {
   box(doc, x, y, w, h);
   doc
     .font('Helvetica-Bold')
     .fontSize(8)
     .fillColor('#444')
     .text(label.toUpperCase(), x + 6, y + 5, { width: w - 12, align });
-  doc
-    .font('Helvetica')
-    .fontSize(valueSize)
-    .fillColor('#000')
-    .text(value || '—', x + 6, y + 18, { width: w - 12, height: h - 24, align, ellipsis: true });
+
+  if (value) {
+    doc
+      .font('Helvetica')
+      .fontSize(valueSize)
+      .fillColor('#000')
+      .text(value, x + 6, y + 18, { width: w - 12, height: h - 24, align, ellipsis: true });
+  } else {
+    doc
+      .font('Helvetica-Oblique')
+      .fontSize(Math.max(valueSize - 1, 7))
+      .fillColor('#999')
+      .text(emptyMessage || '—', x + 6, y + 18, { width: w - 12, height: h - 24, align, ellipsis: true });
+  }
 }
 
 function elementBox(doc, x, y, w, h, category, elements) {
@@ -109,10 +118,15 @@ function generateBreakdownSheet(doc, { project, scene, location, elements }) {
 
   y += row1H;
   labeledCell(doc, MARGIN, y, colA + colB, row2H, 'Description', scene.synopsis, { valueSize: 9 });
+  const noLocationMessage = 'Select a location for this scene in Script Breakdown to fill this in';
   labeledCell(doc, MARGIN + colA + colB, y, colC, row2H, 'Location', location ? location.name : null, {
     valueSize: 9,
+    emptyMessage: noLocationMessage,
   });
-  labeledCell(doc, MARGIN + colA + colB + colC, y, colD, row2H, 'Studio / Location', null, { valueSize: 9 });
+  labeledCell(doc, MARGIN + colA + colB + colC, y, colD, row2H, 'Address', location ? location.address : null, {
+    valueSize: 9,
+    emptyMessage: noLocationMessage,
+  });
 
   // --- Breakdown element boxes ---
   y += row2H + 10;
