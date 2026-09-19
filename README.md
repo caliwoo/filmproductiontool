@@ -10,7 +10,7 @@ A film/video production management tool inspired by StudioBinder — script brea
 - **PDF Breakdown Sheet** — every scene has a "PDF Breakdown" button that downloads a printable, industry-style breakdown sheet (breakdown/scene number, INT/EXT, set, day/night, page count, description, location, and a box per element category) generated on the fly from that scene's data.
 - **Shot List** — per-scene shots with size, angle, movement, equipment, and shot/not-shot status. Click "AI Suggest Shots" to have Claude draft a shot list from the scene's text; suggestions appear in an editable checklist and nothing is added until you commit.
 - **Shot List Report** — a project-wide "Shot List" page compiles every shot across every scene (with its scene number, location, cast, and props) into one plain black-and-white table, viewable in the app and downloadable as a landscape PDF.
-- **Schedule** — organize scenes into shoot days (stripboard-lite), with date, general call time, location, and weather.
+- **Schedule** — organize scenes into shoot days (stripboard-lite), with date, general call time, location, and weather. Click "Build Shooting Schedule" to auto-generate the whole schedule from your breakdown: groups scenes by location (exteriors first, for a weather buffer), orders by complexity (stunts/SFX/vehicles/extras), never mixes DAY and NIGHT scenes in the same day, caps each day at a target page count, and puts animal-tagged scenes first within a day. Shows a full preview — and warns if it will replace an existing schedule — before you apply it.
 - **Call Sheets** — auto-generated, printable call sheet per shoot day: scene lineup, cast needed, and individual crew/cast call times. Includes a print/PDF button.
 - **Cast & Crew** — editable contact directory (name, role, department, phone, email) shared across the project; edit any field inline, no separate save step. Tagging someone as a `cast` element on a scene (manually or via AI Select) automatically adds them here — the character/role name goes in Role, with Name left blank for the actor's real name once the part is cast.
 - **Locations** — location directory (name, address, notes) used by scenes and shoot days.
@@ -75,6 +75,7 @@ All endpoints are under `/api`:
   - `shoot-days/:id/scenes` — assign/unassign/reorder scenes for a shoot day
   - `shoot-days/:id/calls` — set per-contact call times for a shoot day
   - `shoot-days/:id/call-sheet` — aggregated, ready-to-render call sheet data
+- `projects/:id/build-schedule/preview` — proposes a full shooting schedule from the project's scenes (does not save); `projects/:id/build-schedule/commit` — replaces the project's schedule with a reviewed proposal
 
 ## Deploying to Railway
 

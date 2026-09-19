@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import DayCard from '../components/DayCard.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import BuildScheduleDialog from '../components/BuildScheduleDialog.jsx';
 
 export default function SchedulePage() {
   const { projectId } = useOutletContext();
@@ -11,6 +12,7 @@ export default function SchedulePage() {
   const [scenes, setScenes] = useState([]);
   const [error, setError] = useState('');
   const [dayToDelete, setDayToDelete] = useState(null);
+  const [showBuildSchedule, setShowBuildSchedule] = useState(false);
 
   function load() {
     Promise.all([
@@ -47,11 +49,27 @@ export default function SchedulePage() {
     <div>
       <div className="page-header">
         <h2>Schedule</h2>
-        <button className="btn" onClick={handleAddDay}>
-          + Add Shoot Day
-        </button>
+        <div className="flex-row">
+          <button className="btn btn-secondary" onClick={() => setShowBuildSchedule(true)}>
+            ✨ Build Shooting Schedule
+          </button>
+          <button className="btn" onClick={handleAddDay}>
+            + Add Shoot Day
+          </button>
+        </div>
       </div>
       {error && <div className="error-banner">{error}</div>}
+
+      {showBuildSchedule && (
+        <BuildScheduleDialog
+          projectId={projectId}
+          onClose={() => setShowBuildSchedule(false)}
+          onApplied={() => {
+            setShowBuildSchedule(false);
+            load();
+          }}
+        />
+      )}
 
       <div className="day-list">
         {days.map((day) => (

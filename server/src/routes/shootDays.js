@@ -58,7 +58,7 @@ router.delete('/:id', (req, res) => {
 router.get('/:id/scenes', (req, res) => {
   const rows = db
     .prepare(
-      `SELECT sds.id AS assignment_id, sds.order_index, sds.scheduled_time, sds.estimated_minutes, s.*
+      `SELECT sds.id AS assignment_id, sds.order_index AS assignment_order, sds.scheduled_time, sds.estimated_minutes, s.*
        FROM shoot_day_scenes sds
        JOIN scenes s ON s.id = sds.scene_id
        WHERE sds.shoot_day_id = ?
@@ -158,7 +158,7 @@ router.get('/:id/call-sheet', (req, res) => {
 
   const scenes = db
     .prepare(
-      `SELECT sds.order_index, sds.scheduled_time, sds.estimated_minutes, s.*
+      `SELECT sds.order_index AS assignment_order, sds.scheduled_time, sds.estimated_minutes, s.*
        FROM shoot_day_scenes sds
        JOIN scenes s ON s.id = sds.scene_id
        WHERE sds.shoot_day_id = ?

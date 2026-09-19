@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { getShotListRows } = require('../shotListData');
 const { renderShotListPdf } = require('../shotListPdf');
+const { buildSchedulePreview, commitSchedule } = require('../scheduleBuilder');
 
 const router = express.Router();
 
@@ -72,6 +73,37 @@ router.get('/:id/shot-list-pdf', (req, res) => {
   const doc = renderShotListPdf({ project, rows });
   doc.pipe(res);
   doc.end();
+});
+
+// --- Automatic shooting schedule builder ---
+
+router.post('/:id/build-schedule/preview', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const sceneCount = db.prepare('SELECT COUNT(*) AS c FROM scenes WHERE project_id = ?').get(req.params.id).c;
+  if (sceneCount === 0) {
+    return res.status(422).json({ error: 'Add scenes in Script Breakdown before building a schedule.' });
+  }
+
+  const pagesPerDay = Number(req.body.pagesPerDay) || 5;
+  const days = buildSchedulePreview(db, req.params.id, { pagesPerDay });
+  const existingDaysCount = db.prepare('SELECT COUNT(*) AS c FROM shoot_days WHERE project_id = ?').get(req.params.id).c;
+
+  res.json({ days, existingDaysCount });
+});
+
+router.post('/:id/build-schedule/commit', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const { days } = req.body;
+  if (!Array.isArray(days) || days.length === 0) {
+    return res.status(400).json({ error: 'days must be a non-empty array' });
+  }
+
+  commitSchedule(db, req.params.id, days);
+  res.status(201).json({ ok: true });
 });
 
 module.exports = router;
