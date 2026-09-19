@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
-const { backfillCastContacts } = require('./castSync');
+const { backfillCastContacts, migrateCastNameToRole } = require('./castSync');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS shoot_day_calls (
 );
 `);
 
+migrateCastNameToRole(db);
 backfillCastContacts(db);
 
 module.exports = db;

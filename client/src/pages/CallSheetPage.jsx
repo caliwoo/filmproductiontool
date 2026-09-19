@@ -45,8 +45,6 @@ export default function CallSheetPage() {
   const { project, day, location, scenes, calls } = data;
   const calledContactIds = new Set(calls.map((c) => c.id));
   const availableContacts = contacts.filter((c) => !calledContactIds.has(c.id));
-  const castNames = new Set();
-  scenes.forEach((s) => s.elements.filter((e) => e.category === 'cast').forEach((e) => castNames.add(e.value)));
 
   return (
     <div>
@@ -137,8 +135,12 @@ export default function CallSheetPage() {
             {calls.map((c) => (
               <tr key={c.id}>
                 <td>
-                  {c.name}
-                  {castNames.has(c.name) && <span className="badge" style={{ marginLeft: 6 }}>cast</span>}
+                  {c.name || <span className="muted">{c.role ? `${c.role} (uncast)` : 'Unnamed'}</span>}
+                  {c.department === 'cast' && (
+                    <span className="badge" style={{ marginLeft: 6 }}>
+                      cast
+                    </span>
+                  )}
                 </td>
                 <td>{c.role}</td>
                 <td>{c.department}</td>
@@ -173,7 +175,7 @@ export default function CallSheetPage() {
             <option value="">Add cast/crew to this call sheet...</option>
             {availableContacts.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} ({c.department})
+                {c.name || c.role || 'Unnamed'} ({c.department})
               </option>
             ))}
           </select>

@@ -12,12 +12,14 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { project_id, name, role = '', department = 'crew', phone = '', email = '' } = req.body;
+  const { project_id, name = '', role = '', department = 'crew', phone = '', email = '' } = req.body;
   if (!project_id) return res.status(400).json({ error: 'project_id is required' });
-  if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+  if (!name.trim() && !role.trim()) {
+    return res.status(400).json({ error: 'A name or a role/character is required' });
+  }
   const result = db
     .prepare('INSERT INTO contacts (project_id, name, role, department, phone, email) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(project_id, name.trim(), role, department, phone, email);
+    .run(project_id, name.trim(), role.trim(), department, phone, email);
   res.status(201).json(db.prepare('SELECT * FROM contacts WHERE id = ?').get(result.lastInsertRowid));
 });
 

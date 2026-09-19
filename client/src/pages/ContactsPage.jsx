@@ -20,7 +20,7 @@ export default function ContactsPage() {
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.name.trim() && !form.role.trim()) return;
     try {
       await api.post('/contacts', { ...form, project_id: projectId });
       setForm({ name: '', role: '', department: 'crew', phone: '', email: '' });
@@ -36,6 +36,15 @@ export default function ContactsPage() {
     load();
   }
 
+  async function updateContact(id, field, value) {
+    try {
+      await api.put(`/contacts/${id}`, { [field]: value });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -47,8 +56,8 @@ export default function ContactsPage() {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Role</th>
+              <th>{'Name'}</th>
+              <th>{'Role / Character'}</th>
               <th>Department</th>
               <th>Phone</th>
               <th>Email</th>
@@ -58,13 +67,43 @@ export default function ContactsPage() {
           <tbody>
             {contacts.map((c) => (
               <tr key={c.id}>
-                <td>{c.name}</td>
-                <td>{c.role}</td>
                 <td>
-                  <span className="badge">{c.department}</span>
+                  <input
+                    defaultValue={c.name}
+                    placeholder={c.department === 'cast' ? 'Actor name (once cast)' : 'Name'}
+                    onBlur={(e) => e.target.value !== c.name && updateContact(c.id, 'name', e.target.value)}
+                  />
                 </td>
-                <td>{c.phone}</td>
-                <td>{c.email}</td>
+                <td>
+                  <input
+                    defaultValue={c.role}
+                    placeholder={c.department === 'cast' ? 'Character' : 'Role'}
+                    onBlur={(e) => e.target.value !== c.role && updateContact(c.id, 'role', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <select value={c.department} onChange={(e) => updateContact(c.id, 'department', e.target.value)}>
+                    {DEPARTMENTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    defaultValue={c.phone}
+                    placeholder="Phone"
+                    onBlur={(e) => e.target.value !== c.phone && updateContact(c.id, 'phone', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    defaultValue={c.email}
+                    placeholder="Email"
+                    onBlur={(e) => e.target.value !== c.email && updateContact(c.id, 'email', e.target.value)}
+                  />
+                </td>
                 <td>
                   <button className="icon-btn" onClick={() => setContactToDelete(c)} title="Delete">
                     ✕
@@ -119,7 +158,7 @@ export default function ContactsPage() {
       {contactToDelete && (
         <ConfirmDialog
           title="Delete contact?"
-          message={`This will permanently remove "${contactToDelete.name}" from this project's cast & crew, including any call times set for them.`}
+          message={`This will permanently remove "${contactToDelete.name || contactToDelete.role || 'this entry'}" from this project's cast & crew, including any call times set for them.`}
           confirmLabel="Delete Contact"
           onConfirm={confirmDelete}
           onCancel={() => setContactToDelete(null)}
