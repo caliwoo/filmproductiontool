@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { suggestSceneElements } = require('../aiTagger');
+const { renderBreakdownPdf } = require('../breakdownPdf');
 
 const router = express.Router();
 
@@ -157,6 +158,24 @@ router.post('/:sceneId/ai-tag', async (req, res) => {
   } catch (err) {
     res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
   }
+});
+
+// --- Printable/downloadable breakdown sheet PDF ---
+
+router.get('/:sceneId/breakdown-pdf', (req, res) => {
+  const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId);
+  if (!scene) return res.status(404).json({ error: 'Scene not found' });
+
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(scene.project_id);
+  const location = scene.location_id ? db.prepare('SELECT * FROM locations WHERE id = ?').get(scene.location_id) : null;
+  const elements = db.prepare('SELECT * FROM scene_elements WHERE scene_id = ? ORDER BY category, id').all(scene.id);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="Scene-${scene.scene_number}-Breakdown.pdf"`);
+
+  const doc = renderBreakdownPdf({ project, scene, location, elements });
+  doc.pipe(res);
+  doc.end();
 });
 
 module.exports = router;

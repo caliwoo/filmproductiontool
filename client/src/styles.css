@@ -337,6 +337,7 @@ th {
 }
 
 .tag.cast { background: #fee2e2; color: #991b1b; }
+.tag.stunts { background: #ffedd5; color: #9a3412; }
 .tag.props { background: #dbeafe; color: #1e40af; }
 .tag.wardrobe { background: #fef3c7; color: #92400e; }
 .tag.locations { background: #dcfce7; color: #166534; }

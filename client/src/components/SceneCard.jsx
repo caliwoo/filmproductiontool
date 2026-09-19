@@ -3,7 +3,7 @@ import api from '../api.js';
 import ShotList from './ShotList.jsx';
 import AiTagDialog from './AiTagDialog.jsx';
 
-const CATEGORIES = ['cast', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'extras', 'notes'];
+const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
 
 export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +51,15 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
         </div>
         <div className="flex-row">
           <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? 'Shot' : 'Not shot'}</span>
+          <a
+            className="btn btn-secondary"
+            style={{ fontSize: 12, padding: '5px 10px' }}
+            href={`/api/scenes/${scene.id}/breakdown-pdf`}
+            onClick={(e) => e.stopPropagation()}
+            title="Download PDF breakdown sheet"
+          >
+            PDF Breakdown
+          </a>
           <button
             className="icon-btn"
             onClick={(e) => {
