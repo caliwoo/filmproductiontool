@@ -11,6 +11,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [tagValue, setTagValue] = useState('');
   const [error, setError] = useState('');
   const [showAiTag, setShowAiTag] = useState(false);
+  const [showNewLocation, setShowNewLocation] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
 
   const location = locations.find((l) => l.id === scene.location_id);
 
@@ -38,6 +40,20 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   async function removeTag(elementId) {
     await api.del(`/scenes/elements/${elementId}`);
     onChange();
+  }
+
+  async function handleAddLocation(e) {
+    e.preventDefault();
+    if (!newLocationName.trim()) return;
+    try {
+      const newLoc = await api.post('/locations', { project_id: scene.project_id, name: newLocationName.trim() });
+      await api.put(`/scenes/${scene.id}`, { location_id: newLoc.id });
+      setNewLocationName('');
+      setShowNewLocation(false);
+      onChange();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
@@ -102,6 +118,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="DUSK">DUSK</option>
             </select>
             <select
+              key={scene.location_id || 'none'}
               defaultValue={scene.location_id || ''}
               onChange={(e) => updateField('location_id', e.target.value ? Number(e.target.value) : null)}
             >
@@ -112,6 +129,48 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
                 </option>
               ))}
             </select>
+            {!showNewLocation ? (
+              <button
+                type="button"
+                className="icon-btn"
+                title="Add a new location"
+                onClick={() => setShowNewLocation(true)}
+                style={{ fontSize: 18, fontWeight: 700, flex: '0 0 auto' }}
+              >
+                +
+              </button>
+            ) : (
+              <>
+                <input
+                  autoFocus
+                  placeholder="New location name"
+                  style={{ flex: 1 }}
+                  value={newLocationName}
+                  onChange={(e) => setNewLocationName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddLocation(e);
+                    if (e.key === 'Escape') {
+                      setShowNewLocation(false);
+                      setNewLocationName('');
+                    }
+                  }}
+                />
+                <button type="button" className="btn btn-secondary" onClick={handleAddLocation}>
+                  Add
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title="Cancel"
+                  onClick={() => {
+                    setShowNewLocation(false);
+                    setNewLocationName('');
+                  }}
+                >
+                  ✕
+                </button>
+              </>
+            )}
             <select defaultValue={scene.status} onChange={(e) => updateField('status', e.target.value)}>
               <option value="not_shot">Not shot</option>
               <option value="shot">Shot</option>
