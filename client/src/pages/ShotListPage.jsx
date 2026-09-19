@@ -32,6 +32,7 @@ export default function ShotListPage() {
           <thead>
             <tr>
               <th>Shot No.</th>
+              <th>Scene #</th>
               <th>Scene / Description</th>
               <th>Camera Angle / Movement</th>
               <th>Location</th>
@@ -46,6 +47,7 @@ export default function ShotListPage() {
               rows.map((r, i) => (
                 <tr key={r.shot_id} className={i % 2 === 1 ? 'striped' : ''}>
                   <td>{r.shot_number}</td>
+                  <td>{r.scene_number}</td>
                   <td>
                     {r.scene_heading && <strong>{r.scene_heading}</strong>}
                     {r.scene_heading && r.description ? ' — ' : ''}
@@ -61,7 +63,7 @@ export default function ShotListPage() {
               ))}
             {rows && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="muted" style={{ textAlign: 'center', padding: '24px 0' }}>
+                <td colSpan={9} className="muted" style={{ textAlign: 'center', padding: '24px 0' }}>
                   No shots yet. Add shots in Script Breakdown, or generate some with AI Suggest Shots.
                 </td>
               </tr>

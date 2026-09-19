@@ -9,23 +9,28 @@ const HEADER_HEIGHT = 34;
 const MIN_ROW_HEIGHT = 30;
 const BODY_FONT_SIZE = 8;
 
+const HEADER_FILL = '#eeeeee';
+const STRIPE_FILL = '#f7f7f7';
+const BORDER_COLOR = '#999999';
+
 const COLUMNS = [
-  { key: 'shot_number', label: 'Shot No.', width: 46, color: '#FCEFD0' },
-  { key: 'description', label: 'Scene / Description', width: 168, color: '#FBE0B4' },
-  { key: 'camera', label: 'Camera Angle / Movement', width: 104, color: '#FCCBA0' },
-  { key: 'location', label: 'Location', width: 84, color: '#F8B8B0' },
-  { key: 'time', label: 'Time of Day', width: 66, color: '#F6ACC0' },
-  { key: 'equipment', label: 'Equipment / Lens', width: 96, color: '#F4A0A8' },
-  { key: 'talent', label: 'Talent / Props', width: 96, color: '#E8899E' },
-  { key: 'duration', label: 'Duration / Notes', width: 72, color: '#DD7C9C' },
+  { key: 'shot_number', label: 'Shot No.', width: 42 },
+  { key: 'scene_number', label: 'Scene #', width: 46 },
+  { key: 'description', label: 'Scene / Description', width: 150 },
+  { key: 'camera', label: 'Camera Angle / Movement', width: 100 },
+  { key: 'location', label: 'Location', width: 78 },
+  { key: 'time', label: 'Time of Day', width: 60 },
+  { key: 'equipment', label: 'Equipment / Lens', width: 90 },
+  { key: 'talent', label: 'Talent / Props', width: 90 },
+  { key: 'duration', label: 'Duration / Notes', width: 76 },
 ];
 
 function drawTableHeader(doc, y) {
   let x = MARGIN;
   COLUMNS.forEach((col) => {
-    doc.rect(x, y, col.width, HEADER_HEIGHT).fillAndStroke(col.color, '#a88');
+    doc.rect(x, y, col.width, HEADER_HEIGHT).fillAndStroke(HEADER_FILL, BORDER_COLOR);
     doc
-      .fillColor('#1a1a1a')
+      .fillColor('#111')
       .font('Helvetica-Bold')
       .fontSize(8.5)
       .text(col.label, x + CELL_PADDING, y + 10, { width: col.width - CELL_PADDING * 2, align: 'left' });
@@ -49,7 +54,7 @@ function drawRow(doc, y, values, striped) {
   const height = rowHeightFor(doc, values);
   let x = MARGIN;
   COLUMNS.forEach((col) => {
-    doc.rect(x, y, col.width, height).fillAndStroke(striped ? '#FFFBF5' : '#FFFFFF', '#ddd');
+    doc.rect(x, y, col.width, height).fillAndStroke(striped ? STRIPE_FILL : '#ffffff', BORDER_COLOR);
     doc
       .fillColor('#222')
       .font('Helvetica')

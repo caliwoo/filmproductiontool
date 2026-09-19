@@ -55,6 +55,7 @@ router.get('/:id/shot-list-pdf', (req, res) => {
 
   const rows = getShotListRows(req.params.id).map((r) => ({
     shot_number: r.shot_number,
+    scene_number: r.scene_number,
     description: [r.scene_heading, r.description].filter(Boolean).join(' — '),
     camera: [r.size, r.angle, r.movement].filter(Boolean).join(', '),
     location: r.location,
