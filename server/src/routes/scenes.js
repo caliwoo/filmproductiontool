@@ -12,6 +12,20 @@ function withElements(scene) {
   return { ...scene, elements };
 }
 
+// Keeps the Cast & Crew directory in sync with the script breakdown: tagging
+// someone as cast on a scene should make them show up there immediately,
+// without overwriting a contact who's already been filled in.
+function ensureCastContact(projectId, rawName) {
+  const name = String(rawName).trim();
+  if (!name) return;
+  const existing = db
+    .prepare("SELECT id FROM contacts WHERE project_id = ? AND department = 'cast' AND LOWER(name) = LOWER(?)")
+    .get(projectId, name);
+  if (!existing) {
+    db.prepare("INSERT INTO contacts (project_id, name, department) VALUES (?, ?, 'cast')").run(projectId, name);
+  }
+}
+
 router.get('/', (req, res) => {
   const { projectId } = req.query;
   const rows = projectId
@@ -116,6 +130,12 @@ router.post('/:sceneId/elements', (req, res) => {
   const result = db
     .prepare('INSERT INTO scene_elements (scene_id, category, value) VALUES (?, ?, ?)')
     .run(req.params.sceneId, category, value.trim());
+
+  if (category === 'cast') {
+    const scene = db.prepare('SELECT project_id FROM scenes WHERE id = ?').get(req.params.sceneId);
+    if (scene) ensureCastContact(scene.project_id, value);
+  }
+
   res.status(201).json(db.prepare('SELECT * FROM scene_elements WHERE id = ?').get(result.lastInsertRowid));
 });
 
@@ -129,6 +149,9 @@ router.post('/:sceneId/elements/bulk', (req, res) => {
   if (!Array.isArray(elements) || elements.length === 0) {
     return res.status(400).json({ error: 'elements must be a non-empty array' });
   }
+  const scene = db.prepare('SELECT project_id FROM scenes WHERE id = ?').get(req.params.sceneId);
+  if (!scene) return res.status(404).json({ error: 'Scene not found' });
+
   const insert = db.prepare('INSERT INTO scene_elements (scene_id, category, value) VALUES (?, ?, ?)');
   const insertedIds = [];
   const tx = db.transaction((rows) => {
@@ -136,6 +159,7 @@ router.post('/:sceneId/elements/bulk', (req, res) => {
       if (!e || !e.category || !e.value || !String(e.value).trim()) return;
       const result = insert.run(req.params.sceneId, e.category, String(e.value).trim());
       insertedIds.push(result.lastInsertRowid);
+      if (e.category === 'cast') ensureCastContact(scene.project_id, e.value);
     });
   });
   tx(elements);

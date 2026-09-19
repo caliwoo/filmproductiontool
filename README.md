@@ -12,7 +12,7 @@ A film/video production management tool inspired by StudioBinder — script brea
 - **Shot List Report** — a project-wide "Shot List" page compiles every shot across every scene (with its scene, location, cast, and props) into one color-coded, industry-style table, viewable in the app and downloadable as a landscape PDF.
 - **Schedule** — organize scenes into shoot days (stripboard-lite), with date, general call time, location, and weather.
 - **Call Sheets** — auto-generated, printable call sheet per shoot day: scene lineup, cast needed, and individual crew/cast call times. Includes a print/PDF button.
-- **Cast & Crew** — contact directory (name, role, department, phone, email) shared across the project.
+- **Cast & Crew** — contact directory (name, role, department, phone, email) shared across the project. Tagging someone as a `cast` element on a scene (manually or via AI Select) automatically adds them here if they're not already listed, so you can fill in their contact details once the role is cast.
 - **Locations** — location directory (name, address, notes) used by scenes and shoot days.
 
 ## Tech Stack
