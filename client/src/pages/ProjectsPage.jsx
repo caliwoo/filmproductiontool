@@ -60,13 +60,17 @@ export default function ProjectsPage() {
         <div className="project-grid">
           {projects.map((p) => (
             <div className="project-card" key={p.id}>
+              <button
+                className="icon-btn project-card-delete"
+                onClick={() => setProjectToDelete(p)}
+                title="Delete project"
+              >
+                ✕
+              </button>
               <Link to={`/projects/${p.id}`} className="project-card-link">
                 <h3>{p.name}</h3>
                 <p>{p.description || 'No description'}</p>
               </Link>
-              <button className="link-danger" onClick={() => setProjectToDelete(p)}>
-                Delete
-              </button>
             </div>
           ))}
           {projects.length === 0 && <p className="empty-state">No projects yet. Create your first one above.</p>}
