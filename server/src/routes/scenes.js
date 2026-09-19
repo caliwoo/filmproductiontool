@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { suggestSceneElements } = require('../aiTagger');
+const { suggestShots } = require('../aiShotLister');
 const { renderBreakdownPdf } = require('../breakdownPdf');
 
 const router = express.Router();
@@ -155,6 +156,24 @@ router.post('/:sceneId/ai-tag', async (req, res) => {
   try {
     const candidates = await suggestSceneElements(scene, existing);
     res.json({ candidates });
+  } catch (err) {
+    res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
+  }
+});
+
+// --- AI Suggest: propose a shot list for the scene via Claude ---
+
+router.post('/:sceneId/ai-shots', async (req, res) => {
+  const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId);
+  if (!scene) return res.status(404).json({ error: 'Scene not found' });
+
+  const existing = db
+    .prepare('SELECT shot_number, size, angle, description FROM shots WHERE scene_id = ? ORDER BY order_index, id')
+    .all(scene.id);
+
+  try {
+    const candidates = await suggestShots(scene, existing);
+    res.json({ candidates, nextShotNumber: existing.length + 1 });
   } catch (err) {
     res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
   }

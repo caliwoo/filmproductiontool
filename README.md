@@ -8,7 +8,7 @@ A film/video production management tool inspired by StudioBinder — script brea
 - **Script Breakdown** — add scenes (INT/EXT, day/night, location, synopsis) and tag breakdown elements per scene (cast, stunts, extras, props, wardrobe, vehicles, SFX, sound, makeup, animals, notes). Scenes can also be bulk-created by **uploading a screenplay PDF**: the app scans it for scene headings (e.g. `INT. HOUSE - DAY`), splits it into scenes, keeps any scene numbers already in the script, and auto-numbers the rest — you review and edit the detected list before importing.
 - **AI Select** — inside a scene, click "AI Select" to have Claude read that scene's heading and text and suggest breakdown elements (cast, props, wardrobe, etc.) it finds. Suggestions are shown in a checklist for you to review, edit, and select before anything is added — nothing is tagged automatically. Requires an `ANTHROPIC_API_KEY` (see below); without one, the button shows a clear "not configured" message instead of failing silently.
 - **PDF Breakdown Sheet** — every scene has a "PDF Breakdown" button that downloads a printable, industry-style breakdown sheet (breakdown/scene number, INT/EXT, set, day/night, page count, description, location, and a box per element category) generated on the fly from that scene's data.
-- **Shot List** — per-scene shots with size, angle, movement, equipment, and shot/not-shot status.
+- **Shot List** — per-scene shots with size, angle, movement, equipment, and shot/not-shot status. Click "AI Suggest Shots" to have Claude draft a shot list from the scene's text; suggestions appear in an editable checklist and nothing is added until you commit.
 - **Schedule** — organize scenes into shoot days (stripboard-lite), with date, general call time, location, and weather.
 - **Call Sheets** — auto-generated, printable call sheet per shoot day: scene lineup, cast needed, and individual crew/cast call times. Includes a print/PDF button.
 - **Cast & Crew** — contact directory (name, role, department, phone, email) shared across the project.
@@ -49,8 +49,8 @@ Data is stored in a local SQLite file at `server/data/filmprod.sqlite`. Set the 
 
 - `PORT` — server port (default: `4000`)
 - `DATABASE_PATH` — path to the SQLite database file (default: `server/data/filmprod.sqlite`)
-- `ANTHROPIC_API_KEY` — enables the "AI Select" breakdown-element suggestions. Get a key at [console.anthropic.com](https://console.anthropic.com). Without it, AI Select shows a "not configured" message instead of erroring.
-- `ANTHROPIC_MODEL` — Claude model used for AI Select (default: `claude-opus-5`)
+- `ANTHROPIC_API_KEY` — enables the "AI Select" breakdown-element suggestions and "AI Suggest Shots" shot list suggestions. Get a key at [console.anthropic.com](https://console.anthropic.com). Without it, both features show a "not configured" message instead of erroring.
+- `ANTHROPIC_MODEL` — Claude model used for AI Select and AI Suggest Shots (default: `claude-opus-5`)
 
 ## Project Structure
 
@@ -68,7 +68,8 @@ All endpoints are under `/api`:
 - `locations`, `contacts` — CRUD, filterable by `?projectId=`
 - `scenes` — CRUD, filterable by `?projectId=`; nested `scenes/:id/elements` for breakdown tags (`scenes/:id/elements/bulk` for a batch add); `scenes/:id/ai-tag` proposes breakdown elements via Claude (does not save them); `scenes/:id/breakdown-pdf` downloads a printable breakdown sheet; `scenes/reorder`
 - `scripts/parse` — upload a PDF (`multipart/form-data`, field `script`) and get back detected scenes for review; `scripts/import` — commit a reviewed scene list to a project
-- `shots` — CRUD, filterable by `?sceneId=`; `shots/reorder`
+- `shots` — CRUD, filterable by `?sceneId=`; `shots/bulk` for a batch add; `shots/reorder`
+- `scenes/:id/ai-shots` proposes a shot list for the scene via Claude (does not save them)
 - `shoot-days` — CRUD, filterable by `?projectId=`
   - `shoot-days/:id/scenes` — assign/unassign/reorder scenes for a shoot day
   - `shoot-days/:id/calls` — set per-contact call times for a shoot day

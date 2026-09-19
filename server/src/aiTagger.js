@@ -1,7 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk');
-
-const client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5';
+const { client, MODEL } = require('./anthropicClient');
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
 

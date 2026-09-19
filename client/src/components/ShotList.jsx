@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api.js';
+import AiShotDialog from './AiShotDialog.jsx';
 
 const SIZES = ['WS', 'MS', 'CU', 'ECU', 'OTS', 'POV', '2-Shot'];
 
@@ -7,6 +8,7 @@ export default function ShotList({ sceneId }) {
   const [shots, setShots] = useState([]);
   const [form, setForm] = useState({ shot_number: '', size: 'MS', angle: '', movement: '', description: '', equipment: '' });
   const [error, setError] = useState('');
+  const [showAiShots, setShowAiShots] = useState(false);
 
   function load() {
     api.get(`/shots?sceneId=${sceneId}`).then(setShots).catch((err) => setError(err.message));
@@ -38,7 +40,28 @@ export default function ShotList({ sceneId }) {
 
   return (
     <div>
-      <div className="section-label">Shot List</div>
+      <div className="section-label flex-row" style={{ justifyContent: 'space-between' }}>
+        <span>Shot List</span>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowAiShots(true)}
+          style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 'normal', fontSize: 13 }}
+        >
+          ✨ AI Suggest Shots
+        </button>
+      </div>
+
+      {showAiShots && (
+        <AiShotDialog
+          sceneId={sceneId}
+          onClose={() => setShowAiShots(false)}
+          onCommitted={() => {
+            setShowAiShots(false);
+            load();
+          }}
+        />
+      )}
+
       {error && <div className="error-banner">{error}</div>}
 
       {shots.length > 0 && (

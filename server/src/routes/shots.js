@@ -62,6 +62,43 @@ router.delete('/:id', (req, res) => {
   res.status(204).end();
 });
 
+router.post('/bulk', (req, res) => {
+  const { scene_id, shots } = req.body;
+  if (!scene_id) return res.status(400).json({ error: 'scene_id is required' });
+  if (!Array.isArray(shots) || shots.length === 0) {
+    return res.status(400).json({ error: 'shots must be a non-empty array' });
+  }
+
+  const maxOrder = db.prepare('SELECT COALESCE(MAX(order_index), -1) AS m FROM shots WHERE scene_id = ?').get(scene_id).m;
+
+  const insert = db.prepare(
+    `INSERT INTO shots (scene_id, shot_number, size, angle, movement, description, equipment, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const insertedIds = [];
+  const tx = db.transaction((rows) => {
+    rows.forEach((s, i) => {
+      if (!s || !s.description || !String(s.description).trim()) return;
+      insertedIds.push(
+        insert.run(
+          scene_id,
+          s.shot_number ? String(s.shot_number) : String(maxOrder + 2 + i),
+          s.size || '',
+          s.angle || '',
+          s.movement || '',
+          String(s.description).trim(),
+          s.equipment || '',
+          maxOrder + 1 + i
+        ).lastInsertRowid
+      );
+    });
+  });
+  tx(shots);
+
+  const created = insertedIds.map((id) => db.prepare('SELECT * FROM shots WHERE id = ?').get(id));
+  res.status(201).json(created);
+});
+
 router.post('/reorder', (req, res) => {
   const { order } = req.body;
   if (!Array.isArray(order)) return res.status(400).json({ error: 'order must be an array of shot ids' });
