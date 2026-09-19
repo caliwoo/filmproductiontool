@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import api from '../api.js';
+import PageLengthInput from './PageLengthInput.jsx';
 
 export default function ScriptImportDialog({ projectId, onClose, onImported }) {
   const fileInputRef = useRef(null);
@@ -80,7 +81,8 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
             <>
               <p className="muted">
                 Detected {scenes.length} scene{scenes.length === 1 ? '' : 's'} in {fileName}. Review and edit before
-                importing &mdash; uncheck any that were misdetected.
+                importing &mdash; uncheck any that were misdetected. Page lengths are estimated from where each scene
+                falls in the PDF; adjust any that look off.
               </p>
               <table>
                 <thead>
@@ -90,6 +92,7 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
                     <th>Type</th>
                     <th>Time</th>
                     <th>Heading</th>
+                    <th>Length</th>
                     <th>Synopsis</th>
                   </tr>
                 </thead>
@@ -129,6 +132,13 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
                           style={{ width: 160 }}
                           value={s.heading}
                           onChange={(e) => updateScene(i, 'heading', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <PageLengthInput
+                          value={s.page_count}
+                          remountKey={`${i}-${s.page_count}`}
+                          onCommit={(decimal) => updateScene(i, 'page_count', decimal)}
                         />
                       </td>
                       <td className="muted" style={{ fontSize: 12 }}>

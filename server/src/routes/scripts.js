@@ -19,7 +19,7 @@ router.post('/parse', upload.single('script'), async (req, res, next) => {
   if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' });
   try {
     const data = await pdfParse(req.file.buffer);
-    const scenes = parseScriptText(data.text);
+    const scenes = parseScriptText(data.text, { numPages: data.numpages });
     if (scenes.length === 0) {
       return res
         .status(422)
@@ -43,8 +43,8 @@ router.post('/import', (req, res) => {
     .get(project_id).m;
 
   const insert = db.prepare(
-    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, synopsis, order_index)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, synopsis, page_count, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const insertedIds = [];
@@ -57,6 +57,7 @@ router.post('/import', (req, res) => {
         s.int_ext || 'INT',
         s.day_night || 'DAY',
         s.synopsis || '',
+        Number(s.page_count) || 1,
         maxOrder + 1 + i
       );
       insertedIds.push(result.lastInsertRowid);

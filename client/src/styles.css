@@ -291,6 +291,19 @@ th {
   min-width: 100px;
 }
 
+.page-length-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto !important;
+}
+
+.page-length-input input,
+.page-length-input select {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+}
+
 .scene-card {
   background: var(--panel);
   border: 1px solid var(--border);

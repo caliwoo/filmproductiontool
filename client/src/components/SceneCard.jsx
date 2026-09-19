@@ -2,6 +2,8 @@ import { useState } from 'react';
 import api from '../api.js';
 import ShotList from './ShotList.jsx';
 import AiTagDialog from './AiTagDialog.jsx';
+import PageLengthInput from './PageLengthInput.jsx';
+import { formatPageLength } from '../pageLength.js';
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
 
@@ -66,6 +68,9 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           {location && <span className="scene-slug">{location.name}</span>}
         </div>
         <div className="flex-row">
+          <span className="muted" style={{ fontSize: 12 }} title="Script length">
+            {formatPageLength(scene.page_count)} pgs
+          </span>
           <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? 'Shot' : 'Not shot'}</span>
           <a
             className="btn btn-secondary"
@@ -175,6 +180,11 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="not_shot">Not shot</option>
               <option value="shot">Shot</option>
             </select>
+            <PageLengthInput
+              value={scene.page_count}
+              remountKey={`${scene.id}-${scene.page_count}`}
+              onCommit={(decimal) => updateField('page_count', decimal)}
+            />
           </div>
 
           {!scene.location_id && (

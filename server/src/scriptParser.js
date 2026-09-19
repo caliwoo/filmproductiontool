@@ -26,13 +26,22 @@ function normalizeIntExt(raw) {
   return stripped.startsWith('E') ? 'EXT' : 'INT';
 }
 
+function roundToEighth(pages) {
+  return Math.max(0.125, Math.round(pages * 8) / 8);
+}
+
 /**
  * Detects scene headings (sluglines) in raw screenplay text and returns one
  * entry per scene with its heading text, INT/EXT, day/night, a short
- * synopsis pulled from the following lines, and a scene number — taken from
- * the heading when present, otherwise assigned sequentially.
+ * synopsis pulled from the following lines, a scene number — taken from the
+ * heading when present, otherwise assigned sequentially — and an estimated
+ * page_count in eighths of a page (the AD stripboard convention), based on
+ * how many lines of the extracted text the scene spans relative to the
+ * PDF's real page count. This is an approximation (text extraction doesn't
+ * preserve exact typographic layout), but it's far closer than defaulting
+ * every scene to a flat 1 page.
  */
-function parseScriptText(text) {
+function parseScriptText(text, { numPages } = {}) {
   const rawLines = text.split(/\r?\n/).map((l) => l.replace(/[ \t]+/g, ' ').trim());
 
   const headings = [];
@@ -41,6 +50,8 @@ function parseScriptText(text) {
     const match = line.match(HEADING_RE);
     if (match) headings.push({ idx, match });
   });
+
+  const avgLinesPerPage = numPages > 0 && rawLines.length > 0 ? rawLines.length / numPages : null;
 
   const scenes = headings.map(({ idx, match }, i) => {
     const [, leadingNumber, intExtRaw, restRaw] = match;
@@ -64,6 +75,7 @@ function parseScriptText(text) {
     const nextIdx = headings[i + 1] ? headings[i + 1].idx : rawLines.length;
     const bodyLines = rawLines.slice(idx + 1, nextIdx).filter((l) => l && !PAGE_ARTIFACT_RE.test(l));
     const synopsis = bodyLines.join(' ').slice(0, 400).trim();
+    const page_count = avgLinesPerPage ? roundToEighth((nextIdx - idx) / avgLinesPerPage) : 1;
 
     return {
       scene_number: leadingNumber || trailingNumber || null,
@@ -71,6 +83,7 @@ function parseScriptText(text) {
       day_night: dayNight || 'DAY',
       heading: heading || body,
       synopsis,
+      page_count,
     };
   });
 

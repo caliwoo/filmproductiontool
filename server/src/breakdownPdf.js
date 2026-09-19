@@ -1,5 +1,15 @@
 const PDFDocument = require('pdfkit');
 
+// AD stripboards track script length in eighths of a page (e.g. "2 3/8"),
+// not decimals.
+function formatPageLength(decimal) {
+  const total = Math.max(0, Math.round((Number(decimal) || 0) * 8));
+  const whole = Math.floor(total / 8);
+  const eighths = total % 8;
+  if (eighths === 0) return `${whole}`;
+  return whole === 0 ? `${eighths}/8` : `${whole} ${eighths}/8`;
+}
+
 const PAGE_WIDTH = 612; // US Letter, points
 const MARGIN = 36;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
@@ -112,7 +122,7 @@ function generateBreakdownSheet(doc, { project, scene, location, elements }) {
   labeledCell(doc, MARGIN, y, colA, row1H, 'Int / Ext', scene.int_ext, { align: 'center' });
   labeledCell(doc, MARGIN + colA, y, colB, row1H, 'Set', scene.heading);
   labeledCell(doc, MARGIN + colA + colB, y, colC, row1H, 'Day / Night', scene.day_night, { align: 'center' });
-  labeledCell(doc, MARGIN + colA + colB + colC, y, colD, row1H, 'Pages', String(scene.page_count ?? ''), {
+  labeledCell(doc, MARGIN + colA + colB + colC, y, colD, row1H, 'Pages', formatPageLength(scene.page_count), {
     align: 'center',
   });
 
