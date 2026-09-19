@@ -107,25 +107,26 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
     return a.order_index - b.order_index;
   });
 
-  // Bin-pack into days: cap pages/day, never mix day/night in one day.
+  // Bin-pack into days: cap pages/day, never mix day/night or locations in one day
+  // (a company move mid-day isn't something this heuristic attempts).
   const rawDays = [];
   let current = null;
 
   ordered.forEach((scene) => {
     const group = dayNightGroup(scene.day_night);
+    const locKey = scene.location_id ?? 'none';
     const pages = Number(scene.page_count) || 0;
     const wouldOverflow = current && current.scenes.length > 0 && current.totalPages + pages > pagesPerDay;
     const mismatchedGroup = current && current.dnGroup !== group;
+    const mismatchedLocation = current && current.locKey !== locKey;
 
-    if (!current || wouldOverflow || mismatchedGroup) {
-      current = { scenes: [], totalPages: 0, dnGroup: group, locationCounts: new Map() };
+    if (!current || wouldOverflow || mismatchedGroup || mismatchedLocation) {
+      current = { scenes: [], totalPages: 0, dnGroup: group, locKey };
       rawDays.push(current);
     }
 
     current.scenes.push(scene);
     current.totalPages += pages;
-    const locKey = scene.location_id ?? 'none';
-    current.locationCounts.set(locKey, (current.locationCounts.get(locKey) || 0) + 1);
   });
 
   // Within a day, animal-tagged scenes go first (early-call rule).
@@ -134,14 +135,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
   });
 
   const days = rawDays.map((day, i) => {
-    let dominantLocationId = null;
-    let maxCount = 0;
-    day.locationCounts.forEach((count, key) => {
-      if (count > maxCount) {
-        maxCount = count;
-        dominantLocationId = key === 'none' ? null : key;
-      }
-    });
+    const locationId = day.locKey === 'none' ? null : day.locKey;
 
     const generalCallTime = day.dnGroup === 'night' ? '17:00' : '07:00';
     let cursor = timeToMinutes(generalCallTime);
@@ -168,8 +162,8 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
       day_number: i + 1,
       day_night: day.dnGroup,
       general_call_time: generalCallTime,
-      location_id: dominantLocationId,
-      location_name: dominantLocationId ? locationById.get(dominantLocationId)?.name || null : null,
+      location_id: locationId,
+      location_name: locationId ? locationById.get(locationId)?.name || null : null,
       total_pages: Math.round(day.totalPages * 8) / 8,
       scenes: sceneEntries,
     };
