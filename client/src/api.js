@@ -5,13 +5,17 @@ async function request(path, options = {}) {
   });
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
+    let data = null;
     try {
       const body = await res.json();
       if (body.error) message = body.error;
+      data = body;
     } catch {
       // ignore
     }
-    throw new Error(message);
+    const err = new Error(message);
+    err.data = data;
+    throw err;
   }
   if (res.status === 204) return null;
   return res.json();

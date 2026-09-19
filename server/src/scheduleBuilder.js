@@ -28,8 +28,39 @@ function minutesToTime(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+// A scene only enters the auto-schedule once it's actually been worked:
+// tagged with at least one breakdown element and given at least one shot.
+// Scenes that are still just a heading get left out, with a reason, so an
+// unfinished breakdown doesn't silently produce a shoot day of guesses.
+function readinessFilter(db, allScenes) {
+  const ready = [];
+  const excluded = [];
+
+  allScenes.forEach((scene) => {
+    const elementCount = db.prepare('SELECT COUNT(*) AS c FROM scene_elements WHERE scene_id = ?').get(scene.id).c;
+    const shotCount = db.prepare('SELECT COUNT(*) AS c FROM shots WHERE scene_id = ?').get(scene.id).c;
+    const missing = [];
+    if (elementCount === 0) missing.push('breakdown elements');
+    if (shotCount === 0) missing.push('a shot list');
+
+    if (missing.length === 0) {
+      ready.push(scene);
+    } else {
+      excluded.push({
+        scene_id: scene.id,
+        scene_number: scene.scene_number,
+        heading: scene.heading,
+        reason: `Missing ${missing.join(' and ')}`,
+      });
+    }
+  });
+
+  return { ready, excluded };
+}
+
 function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
-  const scenes = db.prepare('SELECT * FROM scenes WHERE project_id = ? ORDER BY order_index, id').all(projectId);
+  const allScenes = db.prepare('SELECT * FROM scenes WHERE project_id = ? ORDER BY order_index, id').all(projectId);
+  const { ready: scenes, excluded: excludedScenes } = readinessFilter(db, allScenes);
   const locations = db.prepare('SELECT * FROM locations WHERE project_id = ?').all(projectId);
   const locationById = new Map(locations.map((l) => [l.id, l]));
 
@@ -102,7 +133,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
     day.scenes.sort((a, b) => (hasCategory(a.id, 'animals') ? 0 : 1) - (hasCategory(b.id, 'animals') ? 0 : 1));
   });
 
-  return rawDays.map((day, i) => {
+  const days = rawDays.map((day, i) => {
     let dominantLocationId = null;
     let maxCount = 0;
     day.locationCounts.forEach((count, key) => {
@@ -143,6 +174,8 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
       scenes: sceneEntries,
     };
   });
+
+  return { days, excludedScenes };
 }
 
 function commitSchedule(db, projectId, days) {

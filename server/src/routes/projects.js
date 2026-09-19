@@ -87,10 +87,19 @@ router.post('/:id/build-schedule/preview', (req, res) => {
   }
 
   const pagesPerDay = Number(req.body.pagesPerDay) || 5;
-  const days = buildSchedulePreview(db, req.params.id, { pagesPerDay });
+  const { days, excludedScenes } = buildSchedulePreview(db, req.params.id, { pagesPerDay });
+
+  if (days.length === 0) {
+    return res.status(422).json({
+      error:
+        'No scenes are ready to schedule yet. A scene needs at least one tagged breakdown element and at least one shot before it can be scheduled.',
+      excludedScenes,
+    });
+  }
+
   const existingDaysCount = db.prepare('SELECT COUNT(*) AS c FROM shoot_days WHERE project_id = ?').get(req.params.id).c;
 
-  res.json({ days, existingDaysCount });
+  res.json({ days, excludedScenes, existingDaysCount });
 });
 
 router.post('/:id/build-schedule/commit', (req, res) => {

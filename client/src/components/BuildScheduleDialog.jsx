@@ -6,6 +6,7 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [excludedScenes, setExcludedScenes] = useState([]);
   const [existingDaysCount, setExistingDaysCount] = useState(0);
   const [error, setError] = useState('');
 
@@ -15,9 +16,11 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
     try {
       const result = await api.post(`/projects/${projectId}/build-schedule/preview`, { pagesPerDay });
       setPreview(result.days);
+      setExcludedScenes(result.excludedScenes || []);
       setExistingDaysCount(result.existingDaysCount);
     } catch (err) {
       setError(err.message);
+      setExcludedScenes((err.data && err.data.excludedScenes) || []);
     } finally {
       setLoading(false);
     }
@@ -50,11 +53,27 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
           <p className="muted">
             Automatically groups your scenes by location (exterior locations first, for weather buffer), orders them
             by complexity, keeps DAY and NIGHT scenes on separate days, and caps each day at a target page count.
+            Only scenes with at least one tagged breakdown element <em>and</em> at least one shot are included.
             It doesn&apos;t know actor availability, legal minor hours, or weather forecasts &mdash; review the
             result before locking it in.
           </p>
 
           {error && <div className="error-banner">{error}</div>}
+
+          {excludedScenes.length > 0 && (
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div className="section-label" style={{ margin: '0 0 6px' }}>
+                {excludedScenes.length} scene{excludedScenes.length === 1 ? '' : 's'} skipped (not ready yet)
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {excludedScenes.map((s) => (
+                  <li key={s.scene_id} style={{ fontSize: 13 }}>
+                    Scene {s.scene_number}. {s.heading} &mdash; <span className="muted">{s.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {!preview && (
             <div className="inline-form">
