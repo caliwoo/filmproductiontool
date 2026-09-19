@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { getShotListRows } = require('../shotListData');
+const { getShotListRows, groupRowsBySetup } = require('../shotListData');
 const { renderShotListPdf } = require('../shotListPdf');
 const { buildSchedulePreview, commitSchedule } = require('../scheduleBuilder');
 
@@ -47,23 +47,30 @@ router.delete('/:id', (req, res) => {
 router.get('/:id/shot-list', (req, res) => {
   const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
-  res.json({ project, rows: getShotListRows(req.params.id) });
+  let rows = getShotListRows(req.params.id);
+  if (req.query.group === 'setup') rows = groupRowsBySetup(rows);
+  res.json({ project, rows });
 });
 
 router.get('/:id/shot-list-pdf', (req, res) => {
   const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const rows = getShotListRows(req.params.id).map((r) => ({
+  let sourceRows = getShotListRows(req.params.id);
+  if (req.query.group === 'setup') sourceRows = groupRowsBySetup(sourceRows);
+
+  const rows = sourceRows.map((r) => ({
     shot_number: r.shot_number,
     scene_number: r.scene_number,
     description: [r.scene_heading, r.description].filter(Boolean).join(' — '),
+    subject: r.subject,
     camera: [r.size, r.angle, r.movement].filter(Boolean).join(', '),
+    lens: r.lens,
     location: r.location,
     time: r.day_night,
     equipment: r.equipment,
     talent: [...r.cast, ...r.props].join(', '),
-    duration: null,
+    notes: [r.spatial_composition, r.setup_notes].filter(Boolean).join(' — '),
   }));
 
   const safeName = project.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'Project';

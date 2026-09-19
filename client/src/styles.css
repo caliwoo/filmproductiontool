@@ -398,19 +398,14 @@ th {
   font-weight: 600;
 }
 
-.shot-row {
-  display: grid;
-  grid-template-columns: 60px 1fr 1fr 1fr 2fr 1fr 90px 32px;
-  gap: 8px;
-  align-items: center;
-  padding: 6px 0;
+.table-scroll {
+  overflow-x: auto;
 }
 
-.shot-row.header {
-  color: var(--text-muted);
-  font-size: 11px;
-  text-transform: uppercase;
-  font-weight: 600;
+.table-scroll table input,
+.table-scroll table select {
+  width: 100%;
+  min-width: 70px;
 }
 
 .icon-btn {

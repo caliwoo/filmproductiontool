@@ -31,6 +31,10 @@ function getShotListRows(projectId) {
         size: shot.size,
         angle: shot.angle,
         movement: shot.movement,
+        subject: shot.subject,
+        lens: shot.lens,
+        spatial_composition: shot.spatial_composition,
+        setup_notes: shot.setup_notes,
         equipment: shot.equipment,
         status: shot.status,
         cast,
@@ -42,4 +46,17 @@ function getShotListRows(projectId) {
   return rows;
 }
 
-module.exports = { getShotListRows };
+// Reorders rows by camera position (location + angle + lens) instead of
+// script chronology, so setups that share a physical camera position and
+// lighting direction end up adjacent -- the 1st AD can then call shots in
+// this order to avoid unnecessary re-lighting and camera moves. The sort is
+// stable, so shots within the same setup keep their scene/shot-number order.
+function groupRowsBySetup(rows) {
+  const keyOf = (r) =>
+    [r.location || 'zzz-no location', r.angle || 'zzz-unspecified angle', r.lens || 'zzz-unspecified lens']
+      .join('|')
+      .toLowerCase();
+  return [...rows].sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
+}
+
+module.exports = { getShotListRows, groupRowsBySetup };

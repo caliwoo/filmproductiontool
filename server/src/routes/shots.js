@@ -18,6 +18,10 @@ router.post('/', (req, res) => {
     size = '',
     angle = '',
     movement = '',
+    subject = '',
+    lens = '',
+    spatial_composition = '',
+    setup_notes = '',
     description = '',
     equipment = '',
   } = req.body;
@@ -28,10 +32,24 @@ router.post('/', (req, res) => {
 
   const result = db
     .prepare(
-      `INSERT INTO shots (scene_id, shot_number, size, angle, movement, description, equipment, order_index)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO shots (scene_id, shot_number, size, angle, movement, subject, lens, spatial_composition,
+         setup_notes, description, equipment, order_index)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(scene_id, shot_number, size, angle, movement, description, equipment, maxOrder + 1);
+    .run(
+      scene_id,
+      shot_number,
+      size,
+      angle,
+      movement,
+      subject,
+      lens,
+      spatial_composition,
+      setup_notes,
+      description,
+      equipment,
+      maxOrder + 1
+    );
 
   res.status(201).json(db.prepare('SELECT * FROM shots WHERE id = ?').get(result.lastInsertRowid));
 });
@@ -39,15 +57,33 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM shots WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Shot not found' });
-  const { shot_number, size, angle, movement, description, equipment, status, order_index } = req.body;
+  const {
+    shot_number,
+    size,
+    angle,
+    movement,
+    subject,
+    lens,
+    spatial_composition,
+    setup_notes,
+    description,
+    equipment,
+    status,
+    order_index,
+  } = req.body;
   db.prepare(
-    `UPDATE shots SET shot_number = ?, size = ?, angle = ?, movement = ?, description = ?, equipment = ?,
-       status = ?, order_index = ? WHERE id = ?`
+    `UPDATE shots SET shot_number = ?, size = ?, angle = ?, movement = ?, subject = ?, lens = ?,
+       spatial_composition = ?, setup_notes = ?, description = ?, equipment = ?, status = ?, order_index = ?
+       WHERE id = ?`
   ).run(
     shot_number ?? existing.shot_number,
     size ?? existing.size,
     angle ?? existing.angle,
     movement ?? existing.movement,
+    subject ?? existing.subject,
+    lens ?? existing.lens,
+    spatial_composition ?? existing.spatial_composition,
+    setup_notes ?? existing.setup_notes,
     description ?? existing.description,
     equipment ?? existing.equipment,
     status ?? existing.status,
@@ -72,8 +108,9 @@ router.post('/bulk', (req, res) => {
   const maxOrder = db.prepare('SELECT COALESCE(MAX(order_index), -1) AS m FROM shots WHERE scene_id = ?').get(scene_id).m;
 
   const insert = db.prepare(
-    `INSERT INTO shots (scene_id, shot_number, size, angle, movement, description, equipment, order_index)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO shots (scene_id, shot_number, size, angle, movement, subject, lens, spatial_composition,
+       setup_notes, description, equipment, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertedIds = [];
   const tx = db.transaction((rows) => {
@@ -86,6 +123,10 @@ router.post('/bulk', (req, res) => {
           s.size || '',
           s.angle || '',
           s.movement || '',
+          s.subject || '',
+          s.lens || '',
+          s.spatial_composition || '',
+          s.setup_notes || '',
           String(s.description).trim(),
           s.equipment || '',
           maxOrder + 1 + i

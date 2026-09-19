@@ -66,6 +66,10 @@ CREATE TABLE IF NOT EXISTS shots (
   size TEXT DEFAULT '',
   angle TEXT DEFAULT '',
   movement TEXT DEFAULT '',
+  subject TEXT DEFAULT '',
+  lens TEXT DEFAULT '',
+  spatial_composition TEXT DEFAULT '',
+  setup_notes TEXT DEFAULT '',
   description TEXT DEFAULT '',
   equipment TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'not_shot',
@@ -106,6 +110,13 @@ const contactColumns = db.prepare('PRAGMA table_info(contacts)').all().map((c) =
 if (!contactColumns.includes('is_lead')) {
   db.exec('ALTER TABLE contacts ADD COLUMN is_lead INTEGER NOT NULL DEFAULT 0');
 }
+
+const shotColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.name);
+['subject', 'lens', 'spatial_composition', 'setup_notes'].forEach((col) => {
+  if (!shotColumns.includes(col)) {
+    db.exec(`ALTER TABLE shots ADD COLUMN ${col} TEXT DEFAULT ''`);
+  }
+});
 
 migrateCastNameToRole(db);
 backfillCastContacts(db);

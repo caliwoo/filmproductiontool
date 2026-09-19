@@ -14,15 +14,17 @@ const STRIPE_FILL = '#f7f7f7';
 const BORDER_COLOR = '#999999';
 
 const COLUMNS = [
-  { key: 'shot_number', label: 'Shot No.', width: 42 },
-  { key: 'scene_number', label: 'Scene #', width: 46 },
-  { key: 'description', label: 'Scene / Description', width: 150 },
-  { key: 'camera', label: 'Camera Angle / Movement', width: 100 },
-  { key: 'location', label: 'Location', width: 78 },
-  { key: 'time', label: 'Time of Day', width: 60 },
-  { key: 'equipment', label: 'Equipment / Lens', width: 90 },
-  { key: 'talent', label: 'Talent / Props', width: 90 },
-  { key: 'duration', label: 'Duration / Notes', width: 76 },
+  { key: 'shot_number', label: 'Shot No.', width: 38 },
+  { key: 'scene_number', label: 'Scene #', width: 40 },
+  { key: 'description', label: 'Scene / Description', width: 130 },
+  { key: 'subject', label: 'Subject', width: 55 },
+  { key: 'camera', label: 'Camera Angle / Movement', width: 90 },
+  { key: 'lens', label: 'Lens', width: 40 },
+  { key: 'location', label: 'Location', width: 65 },
+  { key: 'time', label: 'Time of Day', width: 45 },
+  { key: 'equipment', label: 'Equipment', width: 65 },
+  { key: 'talent', label: 'Talent / Props', width: 80 },
+  { key: 'notes', label: 'Composition / Setup Notes', width: 84 },
 ];
 
 function drawTableHeader(doc, y) {
