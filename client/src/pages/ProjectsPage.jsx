@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   function load() {
     api.get('/projects').then(setProjects).catch((err) => setError(err.message));
@@ -27,9 +29,9 @@ export default function ProjectsPage() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this project and all of its data?')) return;
-    await api.del(`/projects/${id}`);
+  async function confirmDelete() {
+    await api.del(`/projects/${projectToDelete.id}`);
+    setProjectToDelete(null);
     load();
   }
 
@@ -62,7 +64,7 @@ export default function ProjectsPage() {
                 <h3>{p.name}</h3>
                 <p>{p.description || 'No description'}</p>
               </Link>
-              <button className="link-danger" onClick={() => handleDelete(p.id)}>
+              <button className="link-danger" onClick={() => setProjectToDelete(p)}>
                 Delete
               </button>
             </div>
@@ -70,6 +72,16 @@ export default function ProjectsPage() {
           {projects.length === 0 && <p className="empty-state">No projects yet. Create your first one above.</p>}
         </div>
       </div>
+
+      {projectToDelete && (
+        <ConfirmDialog
+          title="Delete project?"
+          message={`This will permanently delete "${projectToDelete.name}" and everything in it — scenes, shots, schedule, contacts, and locations. This can't be undone.`}
+          confirmLabel="Delete Project"
+          onConfirm={confirmDelete}
+          onCancel={() => setProjectToDelete(null)}
+        />
+      )}
     </div>
   );
 }

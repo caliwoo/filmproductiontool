@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 const DEPARTMENTS = ['cast', 'crew', 'production', 'vendor'];
 
@@ -9,6 +10,7 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState([]);
   const [form, setForm] = useState({ name: '', role: '', department: 'crew', phone: '', email: '' });
   const [error, setError] = useState('');
+  const [contactToDelete, setContactToDelete] = useState(null);
 
   function load() {
     api.get(`/contacts?projectId=${projectId}`).then(setContacts).catch((err) => setError(err.message));
@@ -28,8 +30,9 @@ export default function ContactsPage() {
     }
   }
 
-  async function handleDelete(id) {
-    await api.del(`/contacts/${id}`);
+  async function confirmDelete() {
+    await api.del(`/contacts/${contactToDelete.id}`);
+    setContactToDelete(null);
     load();
   }
 
@@ -63,7 +66,7 @@ export default function ContactsPage() {
                 <td>{c.phone}</td>
                 <td>{c.email}</td>
                 <td>
-                  <button className="icon-btn" onClick={() => handleDelete(c.id)} title="Delete">
+                  <button className="icon-btn" onClick={() => setContactToDelete(c)} title="Delete">
                     ✕
                   </button>
                 </td>
@@ -112,6 +115,16 @@ export default function ContactsPage() {
           </button>
         </form>
       </div>
+
+      {contactToDelete && (
+        <ConfirmDialog
+          title="Delete contact?"
+          message={`This will permanently remove "${contactToDelete.name}" from this project's cast & crew, including any call times set for them.`}
+          confirmLabel="Delete Contact"
+          onConfirm={confirmDelete}
+          onCancel={() => setContactToDelete(null)}
+        />
+      )}
     </div>
   );
 }

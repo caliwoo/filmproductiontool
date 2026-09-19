@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import SceneCard from '../components/SceneCard.jsx';
 import ScriptImportDialog from '../components/ScriptImportDialog.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function BreakdownPage() {
   const { projectId } = useOutletContext();
@@ -11,6 +12,7 @@ export default function BreakdownPage() {
   const [newSceneNumber, setNewSceneNumber] = useState('');
   const [error, setError] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [sceneToDelete, setSceneToDelete] = useState(null);
 
   function load() {
     Promise.all([
@@ -38,9 +40,9 @@ export default function BreakdownPage() {
     }
   }
 
-  async function handleDeleteScene(id) {
-    if (!confirm('Delete this scene, its elements, and shot list?')) return;
-    await api.del(`/scenes/${id}`);
+  async function confirmDeleteScene() {
+    await api.del(`/scenes/${sceneToDelete.id}`);
+    setSceneToDelete(null);
     load();
   }
 
@@ -73,7 +75,13 @@ export default function BreakdownPage() {
       )}
 
       {scenes.map((scene) => (
-        <SceneCard key={scene.id} scene={scene} locations={locations} onChange={load} onDelete={handleDeleteScene} />
+        <SceneCard
+          key={scene.id}
+          scene={scene}
+          locations={locations}
+          onChange={load}
+          onDelete={() => setSceneToDelete(scene)}
+        />
       ))}
 
       {scenes.length === 0 && <p className="empty-state">No scenes yet. Add your first scene below.</p>}
@@ -88,6 +96,16 @@ export default function BreakdownPage() {
           + Add Scene
         </button>
       </form>
+
+      {sceneToDelete && (
+        <ConfirmDialog
+          title="Delete scene?"
+          message={`This will permanently delete Scene ${sceneToDelete.scene_number} (${sceneToDelete.heading || 'untitled'}), along with its tagged elements and shot list. This can't be undone.`}
+          confirmLabel="Delete Scene"
+          onConfirm={confirmDeleteScene}
+          onCancel={() => setSceneToDelete(null)}
+        />
+      )}
     </div>
   );
 }

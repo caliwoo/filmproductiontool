@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function LocationsPage() {
   const { projectId } = useOutletContext();
   const [locations, setLocations] = useState([]);
   const [form, setForm] = useState({ name: '', address: '', notes: '' });
   const [error, setError] = useState('');
+  const [locationToDelete, setLocationToDelete] = useState(null);
 
   function load() {
     api.get(`/locations?projectId=${projectId}`).then(setLocations).catch((err) => setError(err.message));
@@ -26,8 +28,9 @@ export default function LocationsPage() {
     }
   }
 
-  async function handleDelete(id) {
-    await api.del(`/locations/${id}`);
+  async function confirmDelete() {
+    await api.del(`/locations/${locationToDelete.id}`);
+    setLocationToDelete(null);
     load();
   }
 
@@ -55,7 +58,7 @@ export default function LocationsPage() {
                 <td>{l.address}</td>
                 <td>{l.notes}</td>
                 <td>
-                  <button className="icon-btn" onClick={() => handleDelete(l.id)} title="Delete">
+                  <button className="icon-btn" onClick={() => setLocationToDelete(l)} title="Delete">
                     ✕
                   </button>
                 </td>
@@ -92,6 +95,16 @@ export default function LocationsPage() {
           </button>
         </form>
       </div>
+
+      {locationToDelete && (
+        <ConfirmDialog
+          title="Delete location?"
+          message={`This will permanently remove "${locationToDelete.name}" from this project. Any scenes or shoot days using it will be left with no location set.`}
+          confirmLabel="Delete Location"
+          onConfirm={confirmDelete}
+          onCancel={() => setLocationToDelete(null)}
+        />
+      )}
     </div>
   );
 }

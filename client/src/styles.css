@@ -172,6 +172,21 @@ textarea {
   background: #f0f1f3;
 }
 
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
