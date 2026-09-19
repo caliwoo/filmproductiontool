@@ -59,6 +59,7 @@ export default function ContactsPage() {
               <th>{'Name'}</th>
               <th>{'Role / Character'}</th>
               <th>Department</th>
+              <th title="Lead cast get priority for a schedule with fewer days off">Lead</th>
               <th>Phone</th>
               <th>Email</th>
               <th></th>
@@ -90,6 +91,18 @@ export default function ContactsPage() {
                     ))}
                   </select>
                 </td>
+                <td style={{ textAlign: 'center' }}>
+                  {c.department === 'cast' ? (
+                    <input
+                      type="checkbox"
+                      checked={!!c.is_lead}
+                      title="Lead cast: prioritize clustering this actor's scenes to minimize their days off"
+                      onChange={(e) => updateContact(c.id, 'is_lead', e.target.checked)}
+                    />
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
                 <td>
                   <input
                     defaultValue={c.phone}
@@ -113,7 +126,7 @@ export default function ContactsPage() {
             ))}
             {contacts.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No contacts yet.
                 </td>
               </tr>

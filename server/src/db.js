@@ -102,6 +102,11 @@ CREATE TABLE IF NOT EXISTS shoot_day_calls (
 );
 `);
 
+const contactColumns = db.prepare('PRAGMA table_info(contacts)').all().map((c) => c.name);
+if (!contactColumns.includes('is_lead')) {
+  db.exec('ALTER TABLE contacts ADD COLUMN is_lead INTEGER NOT NULL DEFAULT 0');
+}
+
 migrateCastNameToRole(db);
 backfillCastContacts(db);
 

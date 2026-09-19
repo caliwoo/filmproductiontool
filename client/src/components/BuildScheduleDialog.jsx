@@ -51,11 +51,12 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
 
         <div className="modal-body">
           <p className="muted">
-            Automatically groups your scenes by location (exterior locations first, for weather buffer), orders them
-            by complexity, keeps DAY and NIGHT scenes on separate days, and caps each day at a target page count.
-            Only scenes with at least one tagged breakdown element <em>and</em> at least one shot are included.
-            It doesn&apos;t know actor availability, legal minor hours, or weather forecasts &mdash; review the
-            result before locking it in.
+            Automatically groups your scenes by location (exterior locations first, for weather buffer), then, among
+            tied locations, clusters ones sharing lead cast (flagged in Cast &amp; Crew) so their days fall close
+            together instead of spread out with gaps. Orders by complexity, keeps DAY and NIGHT scenes on separate
+            days, and caps each day at a target page count. Only scenes with at least one tagged breakdown element{' '}
+            <em>and</em> at least one shot are included. It doesn&apos;t know actor availability, legal minor hours,
+            or weather forecasts &mdash; review the result before locking it in.
           </p>
 
           {error && <div className="error-banner">{error}</div>}
@@ -114,6 +115,11 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
                       {day.location_name || 'No location'} &middot; {day.total_pages} pages
                     </span>
                   </div>
+                  {day.lead_cast && day.lead_cast.length > 0 && (
+                    <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                      Lead cast: {day.lead_cast.join(', ')}
+                    </div>
+                  )}
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
                     {day.scenes.map((s) => (
                       <li key={s.scene_id} style={{ fontSize: 13 }}>

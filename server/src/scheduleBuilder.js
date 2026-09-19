@@ -2,6 +2,10 @@
 // AD scheduling playbook as the tracked breakdown data supports:
 //   - group scenes by location to minimize company moves
 //   - schedule locations with exterior scenes earlier (weather contingency)
+//   - among locations that tie on the above, cluster ones that share lead
+//     cast together, so a lead's scenes fall on as few, closely-spaced
+//     days as possible (lead actors are usually paid whether they work
+//     that day or not, so gaps between their days are wasted money)
 //   - tackle higher-complexity scenes (stunts/sfx/vehicles/extras) earlier
 //   - never mix DAY and NIGHT scenes in the same shoot day (turnarounds)
 //   - cap each day at a target page count
@@ -58,6 +62,41 @@ function readinessFilter(db, allScenes) {
   return { ready, excluded };
 }
 
+// Greedily reorders a set of locations (already given in their preferred
+// base order -- e.g. highest complexity first) so that locations sharing
+// lead cast members end up adjacent, without disturbing the order when no
+// lead cast is tagged at all. Chains forward from the first location,
+// always continuing to whichever remaining location shares the most lead
+// cast with the current one; ties fall back to the original base order so
+// the result is identical to that base order when there's no cast signal.
+function clusterLocationsByLeadCast(baseOrderKeys, sharedLeadCastCount) {
+  if (baseOrderKeys.length <= 2) return baseOrderKeys;
+
+  const baseIndex = new Map(baseOrderKeys.map((key, i) => [key, i]));
+  const remaining = new Set(baseOrderKeys.slice(1));
+  const result = [baseOrderKeys[0]];
+
+  while (remaining.size > 0) {
+    const current = result[result.length - 1];
+    let best = null;
+    let bestScore = -1;
+    remaining.forEach((candidate) => {
+      const score = sharedLeadCastCount(current, candidate);
+      if (
+        score > bestScore ||
+        (score === bestScore && (best === null || baseIndex.get(candidate) < baseIndex.get(best)))
+      ) {
+        best = candidate;
+        bestScore = score;
+      }
+    });
+    result.push(best);
+    remaining.delete(best);
+  }
+
+  return result;
+}
+
 function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
   const allScenes = db.prepare('SELECT * FROM scenes WHERE project_id = ? ORDER BY order_index, id').all(projectId);
   const { ready: scenes, excluded: excludedScenes } = readinessFilter(db, allScenes);
@@ -66,7 +105,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
 
   const elementsByScene = new Map();
   scenes.forEach((s) => {
-    elementsByScene.set(s.id, db.prepare('SELECT category FROM scene_elements WHERE scene_id = ?').all(s.id));
+    elementsByScene.set(s.id, db.prepare('SELECT category, value FROM scene_elements WHERE scene_id = ?').all(s.id));
   });
 
   const complexityScore = (sceneId) =>
@@ -74,25 +113,62 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
 
   const hasCategory = (sceneId, category) => (elementsByScene.get(sceneId) || []).some((e) => e.category === category);
 
-  // Rank locations: any-exterior locations first, then by total complexity
-  // (weather buffer + tackle the hardest setups earliest).
+  // Lead cast (flagged in Cast & Crew) tagged on a scene, by character name.
+  const leadCastNames = new Set(
+    db
+      .prepare("SELECT role FROM contacts WHERE project_id = ? AND department = 'cast' AND is_lead = 1")
+      .all(projectId)
+      .map((c) => c.role.trim().toUpperCase())
+      .filter(Boolean)
+  );
+  const leadCastInScene = (sceneId) =>
+    (elementsByScene.get(sceneId) || [])
+      .filter((e) => e.category === 'cast' && leadCastNames.has(e.value.trim().toUpperCase()))
+      .map((e) => e.value.trim().toUpperCase());
+
+  // Rank locations: any-exterior locations first (weather buffer), then --
+  // among locations tied on that -- cluster ones sharing lead cast together
+  // so a lead actor's days fall close together, then by total complexity
+  // (tackle the hardest setups earliest).
   const locationStats = new Map();
+  const leadCastByLocation = new Map();
   scenes.forEach((s) => {
     const key = s.location_id ?? 'none';
     const stat = locationStats.get(key) || { hasExt: false, totalComplexity: 0 };
     if (s.int_ext === 'EXT' || s.int_ext === 'INT/EXT') stat.hasExt = true;
     stat.totalComplexity += complexityScore(s.id);
     locationStats.set(key, stat);
+
+    const leadSet = leadCastByLocation.get(key) || new Set();
+    leadCastInScene(s.id).forEach((name) => leadSet.add(name));
+    leadCastByLocation.set(key, leadSet);
   });
+
+  const sharedLeadCastCount = (keyA, keyB) => {
+    const setA = leadCastByLocation.get(keyA) || new Set();
+    const setB = leadCastByLocation.get(keyB) || new Set();
+    let count = 0;
+    setA.forEach((name) => {
+      if (setB.has(name)) count += 1;
+    });
+    return count;
+  };
+
+  const baseOrder = [...locationStats.keys()].sort((a, b) => {
+    const sa = locationStats.get(a);
+    const sb = locationStats.get(b);
+    if (sa.hasExt !== sb.hasExt) return sa.hasExt ? -1 : 1;
+    return sb.totalComplexity - sa.totalComplexity;
+  });
+  const extKeys = baseOrder.filter((k) => locationStats.get(k).hasExt);
+  const intKeys = baseOrder.filter((k) => !locationStats.get(k).hasExt);
+  const finalOrder = [
+    ...clusterLocationsByLeadCast(extKeys, sharedLeadCastCount),
+    ...clusterLocationsByLeadCast(intKeys, sharedLeadCastCount),
+  ];
+
   const locationRank = new Map();
-  [...locationStats.keys()]
-    .sort((a, b) => {
-      const sa = locationStats.get(a);
-      const sb = locationStats.get(b);
-      if (sa.hasExt !== sb.hasExt) return sa.hasExt ? -1 : 1;
-      return sb.totalComplexity - sa.totalComplexity;
-    })
-    .forEach((key, i) => locationRank.set(key, i));
+  finalOrder.forEach((key, i) => locationRank.set(key, i));
 
   const ordered = [...scenes].sort((a, b) => {
     const la = locationRank.get(a.location_id ?? 'none');
@@ -136,6 +212,8 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
 
   const days = rawDays.map((day, i) => {
     const locationId = day.locKey === 'none' ? null : day.locKey;
+    const leadCastToday = new Set();
+    day.scenes.forEach((scene) => leadCastInScene(scene.id).forEach((name) => leadCastToday.add(name)));
 
     const generalCallTime = day.dnGroup === 'night' ? '17:00' : '07:00';
     let cursor = timeToMinutes(generalCallTime);
@@ -165,6 +243,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
       location_id: locationId,
       location_name: locationId ? locationById.get(locationId)?.name || null : null,
       total_pages: Math.round(day.totalPages * 8) / 8,
+      lead_cast: [...leadCastToday].sort(),
       scenes: sceneEntries,
     };
   });

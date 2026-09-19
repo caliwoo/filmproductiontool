@@ -26,15 +26,16 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Contact not found' });
-  const { name, role, department, phone, email } = req.body;
+  const { name, role, department, phone, email, is_lead } = req.body;
   db.prepare(
-    'UPDATE contacts SET name = ?, role = ?, department = ?, phone = ?, email = ? WHERE id = ?'
+    'UPDATE contacts SET name = ?, role = ?, department = ?, phone = ?, email = ?, is_lead = ? WHERE id = ?'
   ).run(
     name ?? existing.name,
     role ?? existing.role,
     department ?? existing.department,
     phone ?? existing.phone,
     email ?? existing.email,
+    is_lead === undefined ? existing.is_lead : is_lead ? 1 : 0,
     req.params.id
   );
   res.json(db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id));
