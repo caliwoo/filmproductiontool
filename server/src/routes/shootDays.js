@@ -90,7 +90,17 @@ router.get('/:id/scenes', (req, res) => {
        ORDER BY sds.order_index, sds.id`
     )
     .all(req.params.id);
-  res.json(rows);
+
+  const enriched = rows.map((scene) => {
+    const location = scene.location_id ? db.prepare('SELECT name FROM locations WHERE id = ?').get(scene.location_id) : null;
+    const cast = db
+      .prepare("SELECT value FROM scene_elements WHERE scene_id = ? AND category = 'cast'")
+      .all(scene.id)
+      .map((r) => r.value);
+    return { ...scene, location_name: location ? location.name : null, cast };
+  });
+
+  res.json(enriched);
 });
 
 router.post('/:id/scenes', (req, res) => {

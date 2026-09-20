@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
+import PageLengthInput from './PageLengthInput.jsx';
 
 export default function DayCard({
   day,
@@ -9,6 +10,7 @@ export default function DayCard({
   assigned,
   locations,
   allScenes,
+  castNumberByName,
   onChange,
   onReloadDay,
   onDelete,
@@ -48,6 +50,25 @@ export default function DayCard({
   async function handleUnassign(assignmentId) {
     await api.del(`/shoot-days/scenes/${assignmentId}`);
     onReloadDay();
+  }
+
+  async function updateScenePages(sceneId, decimal) {
+    await api.put(`/scenes/${sceneId}`, { page_count: decimal });
+    onReloadDay();
+  }
+
+  async function updateEstimation(assignmentId, hoursStr) {
+    const hours = Number(hoursStr);
+    if (Number.isNaN(hours) || hours < 0) return;
+    await api.put(`/shoot-days/scenes/${assignmentId}`, { estimated_minutes: Math.round(hours * 60) });
+    onReloadDay();
+  }
+
+  function castIdsFor(scene) {
+    return (scene.cast || [])
+      .map((name) => castNumberByName[name.trim().toUpperCase()])
+      .filter((n) => n !== undefined)
+      .sort((a, b) => a - b);
   }
 
   return (
@@ -119,45 +140,90 @@ export default function DayCard({
       </div>
 
       <div className="section-label">Scenes on this day</div>
-      <div>
-        {assigned.map((scene, i) => (
-          <div
-            className={`assigned-scene-row ${
-              draggingScene && draggingScene.assignmentId === scene.assignment_id ? 'dragging' : ''
-            }`}
-            key={scene.assignment_id}
-            data-scene-row
-            data-day-id={day.id}
-            data-row-index={i}
-          >
-            <span className="flex-row" style={{ gap: 8 }}>
-              <span
-                className="drag-handle"
-                title="Drag to reorder, or drop on another day"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onStartSceneDrag(
-                    scene.assignment_id,
-                    `${scene.scene_number}. ${scene.heading}`,
-                    e.clientX,
-                    e.clientY
-                  );
-                }}
-              >
-                ⠿
-              </span>
-              <span>
-                {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
-                {scene.scheduled_time && <span className="muted"> &nbsp;@ {scene.scheduled_time}</span>}
-              </span>
-            </span>
-            <button className="icon-btn" onClick={() => handleUnassign(scene.assignment_id)}>
-              ✕
-            </button>
-          </div>
-        ))}
-        {assigned.length === 0 && <p className="muted">No scenes assigned yet.</p>}
-      </div>
+      {assigned.length > 0 && (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>#</th>
+                <th>Scene Setting</th>
+                <th>Cast ID</th>
+                <th>Pages</th>
+                <th>Estimation, h</th>
+                <th>Location</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {assigned.map((scene, i) => (
+                <tr
+                  className={draggingScene && draggingScene.assignmentId === scene.assignment_id ? 'dragging' : ''}
+                  key={scene.assignment_id}
+                  data-scene-row
+                  data-day-id={day.id}
+                  data-row-index={i}
+                >
+                  <td>
+                    <span
+                      className="drag-handle"
+                      title="Drag to reorder, or drop on another day"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        onStartSceneDrag(
+                          scene.assignment_id,
+                          `${scene.scene_number}. ${scene.heading}`,
+                          e.clientX,
+                          e.clientY
+                        );
+                      }}
+                    >
+                      ⠿
+                    </span>
+                  </td>
+                  <td>{scene.scene_number}</td>
+                  <td>
+                    <strong>
+                      {scene.int_ext}. {scene.heading} &ndash; {scene.day_night}
+                    </strong>
+                    {scene.synopsis && (
+                      <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+                        {scene.synopsis.length > 90 ? `${scene.synopsis.slice(0, 90)}...` : scene.synopsis}
+                      </div>
+                    )}
+                    {scene.scheduled_time && <div className="muted" style={{ fontSize: 12 }}>@ {scene.scheduled_time}</div>}
+                  </td>
+                  <td>{castIdsFor(scene).join(', ') || '—'}</td>
+                  <td>
+                    <PageLengthInput
+                      value={scene.page_count}
+                      remountKey={`${scene.id}-${scene.page_count}`}
+                      onCommit={(decimal) => updateScenePages(scene.id, decimal)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      style={{ width: 60 }}
+                      defaultValue={Number(scene.estimated_minutes || 60) / 60}
+                      onBlur={(e) => updateEstimation(scene.assignment_id, e.target.value)}
+                    />
+                  </td>
+                  <td>{scene.location_name || '—'}</td>
+                  <td>
+                    <button className="icon-btn" onClick={() => handleUnassign(scene.assignment_id)}>
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {assigned.length === 0 && <p className="muted">No scenes assigned yet.</p>}
 
       <form className="inline-form" onSubmit={handleAssign}>
         <select value={sceneToAdd} onChange={(e) => setSceneToAdd(e.target.value)}>

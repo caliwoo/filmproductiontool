@@ -449,19 +449,6 @@ th {
   font-size: 13px;
 }
 
-.assigned-scene-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.assigned-scene-row:last-child {
-  border-bottom: none;
-}
-
 .drag-handle {
   cursor: grab;
   color: var(--text-muted);
@@ -475,7 +462,7 @@ body.dnd-active * {
 }
 
 .day-card.dragging,
-.assigned-scene-row.dragging {
+tr.dragging {
   opacity: 0.4;
 }
 

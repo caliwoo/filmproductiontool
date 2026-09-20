@@ -11,6 +11,7 @@ export default function SchedulePage() {
   const [assignmentsByDay, setAssignmentsByDay] = useState({});
   const [locations, setLocations] = useState([]);
   const [scenes, setScenes] = useState([]);
+  const [castNumberByName, setCastNumberByName] = useState({});
   const [error, setError] = useState('');
   const [dayToDelete, setDayToDelete] = useState(null);
   const [showBuildSchedule, setShowBuildSchedule] = useState(false);
@@ -25,11 +26,25 @@ export default function SchedulePage() {
       api.get(`/shoot-days?projectId=${projectId}`),
       api.get(`/locations?projectId=${projectId}`),
       api.get(`/scenes?projectId=${projectId}`),
+      api.get(`/contacts?projectId=${projectId}`),
     ])
-      .then(([dayRows, locationRows, sceneRows]) => {
+      .then(([dayRows, locationRows, sceneRows, contactRows]) => {
         setDays(dayRows);
         setLocations(locationRows);
         setScenes(sceneRows);
+
+        // Stripboard-style Cast ID#: a compact stand-in for the full name,
+        // numbered in the order each cast member was first introduced.
+        const castMap = {};
+        contactRows
+          .filter((c) => c.department === 'cast')
+          .sort((a, b) => a.id - b.id)
+          .forEach((c, i) => {
+            const key = (c.role || '').trim().toUpperCase();
+            if (key) castMap[key] = i + 1;
+          });
+        setCastNumberByName(castMap);
+
         return Promise.all(dayRows.map((d) => api.get(`/shoot-days/${d.id}/scenes`))).then((perDay) => {
           const map = {};
           dayRows.forEach((d, i) => {
@@ -216,6 +231,7 @@ export default function SchedulePage() {
             assigned={assignmentsByDay[day.id] || []}
             locations={locations}
             allScenes={scenes}
+            castNumberByName={castNumberByName}
             onChange={load}
             onReloadDay={() => reloadDay(day.id)}
             onDelete={() => setDayToDelete(day)}
