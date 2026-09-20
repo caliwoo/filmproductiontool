@@ -195,9 +195,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           )}
 
           <textarea
-            className="screenplay-text"
             placeholder="Synopsis"
-            style={{ width: '100%', marginTop: 10, minHeight: 160 }}
+            style={{ width: '100%', marginTop: 10, minHeight: 50 }}
             defaultValue={scene.synopsis}
             onBlur={(e) => updateField('synopsis', e.target.value)}
           />
