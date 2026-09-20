@@ -468,6 +468,12 @@ th {
   user-select: none;
 }
 
+body.dnd-active,
+body.dnd-active * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
 .day-card.dragging,
 .assigned-scene-row.dragging {
   opacity: 0.4;

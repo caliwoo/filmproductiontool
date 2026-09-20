@@ -98,6 +98,46 @@ export default function SchedulePage() {
     setDirty(true);
   }
 
+  // Manual mouse-driven drag instead of native HTML5 drag-and-drop -- the
+  // native drag/drop DOM events turn out to be unreliable to actually
+  // initiate from a real mouse in some browsers/environments. This tracks
+  // the drag with plain mousedown/mouseup and resolves the drop target from
+  // the cursor position, which works everywhere a mouse does.
+  function startDrag(kind, payload) {
+    if (kind === 'day') setDraggingDayId(payload.dayId);
+    else setDraggingScene(payload);
+    document.body.classList.add('dnd-active');
+
+    function finish(e) {
+      window.removeEventListener('mouseup', finish);
+      document.body.classList.remove('dnd-active');
+
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const dayEl = el && el.closest('[data-day-card]');
+
+      if (dayEl) {
+        if (kind === 'day') {
+          moveDay(payload.dayId, Number(dayEl.dataset.dayIndex));
+        } else {
+          const toDayId = Number(dayEl.dataset.dayId);
+          const rowEl = el.closest('[data-scene-row]');
+          let toIndex = Number.MAX_SAFE_INTEGER; // past the end; moveScene clamps it
+          if (rowEl) {
+            const rect = rowEl.getBoundingClientRect();
+            const isAfter = e.clientY - rect.top > rect.height / 2;
+            toIndex = Number(rowEl.dataset.rowIndex) + (isAfter ? 1 : 0);
+          }
+          moveScene(payload.fromDayId, toDayId, payload.assignmentId, toIndex);
+        }
+      }
+
+      setDraggingDayId(null);
+      setDraggingScene(null);
+    }
+
+    window.addEventListener('mouseup', finish);
+  }
+
   async function handleCommit() {
     setSaving(true);
     setError('');
@@ -169,12 +209,10 @@ export default function SchedulePage() {
             onReloadDay={() => reloadDay(day.id)}
             onDelete={() => setDayToDelete(day)}
             draggingDayId={draggingDayId}
-            setDraggingDayId={setDraggingDayId}
-            moveDay={moveDay}
             draggingScene={draggingScene}
-            setDraggingScene={setDraggingScene}
-            moveScene={moveScene}
-            dropIndex={index}
+            onStartDayDrag={() => startDrag('day', { dayId: day.id })}
+            onStartSceneDrag={(assignmentId) => startDrag('scene', { fromDayId: day.id, assignmentId })}
+            dayIndex={index}
           />
         ))}
         {days.length === 0 && <p className="empty-state">No shoot days yet. Add your first one above.</p>}

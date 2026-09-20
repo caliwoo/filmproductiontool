@@ -5,6 +5,7 @@ import api from '../api.js';
 export default function DayCard({
   day,
   dayNumber,
+  dayIndex,
   assigned,
   locations,
   allScenes,
@@ -12,12 +13,9 @@ export default function DayCard({
   onReloadDay,
   onDelete,
   draggingDayId,
-  setDraggingDayId,
-  moveDay,
   draggingScene,
-  setDraggingScene,
-  moveScene,
-  dropIndex,
+  onStartDayDrag,
+  onStartSceneDrag,
 }) {
   const [sceneToAdd, setSceneToAdd] = useState('');
   const [error, setError] = useState('');
@@ -52,73 +50,23 @@ export default function DayCard({
     onReloadDay();
   }
 
-  function handleDayDragStart(e) {
-    if (!e.target.closest('.drag-handle')) {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggingDayId(day.id);
-  }
-
-  function handleDayDragOver(e) {
-    if (draggingDayId === null || draggingDayId === day.id) return;
-    e.preventDefault();
-  }
-
-  function handleDayDrop(e) {
-    if (draggingDayId === null || draggingDayId === day.id) return;
-    e.preventDefault();
-    moveDay(draggingDayId, dropIndex);
-    setDraggingDayId(null);
-  }
-
-  function handleSceneDragStart(assignmentId) {
-    return (e) => {
-      if (!e.target.closest('.drag-handle')) {
-        e.preventDefault();
-        return;
-      }
-      e.stopPropagation();
-      e.dataTransfer.effectAllowed = 'move';
-      setDraggingScene({ fromDayId: day.id, assignmentId });
-    };
-  }
-
-  function handleSceneDragOver(e) {
-    if (!draggingScene) return;
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function handleSceneDropOnRow(rowIndex) {
-    return (e) => {
-      if (!draggingScene) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const isAfter = e.clientY - rect.top > rect.height / 2;
-      moveScene(draggingScene.fromDayId, day.id, draggingScene.assignmentId, rowIndex + (isAfter ? 1 : 0));
-      setDraggingScene(null);
-    };
-  }
-
-  function handleSceneDropAtEnd(e) {
-    if (!draggingScene) return;
-    e.preventDefault();
-    moveScene(draggingScene.fromDayId, day.id, draggingScene.assignmentId, assigned.length);
-    setDraggingScene(null);
-  }
-
   return (
     <div
       className={`day-card ${draggingDayId === day.id ? 'dragging' : ''}`}
-      onDragOver={handleDayDragOver}
-      onDrop={handleDayDrop}
+      data-day-card
+      data-day-id={day.id}
+      data-day-index={dayIndex}
     >
-      <div className="day-card-header" draggable onDragStart={handleDayDragStart} onDragEnd={() => setDraggingDayId(null)}>
+      <div className="day-card-header">
         <div className="flex-row" style={{ alignItems: 'flex-start', gap: 10 }}>
-          <span className="drag-handle" title="Drag to reorder days">
+          <span
+            className="drag-handle"
+            title="Drag to reorder days"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onStartDayDrag();
+            }}
+          >
             ⠿
           </span>
           <div>
@@ -171,21 +119,26 @@ export default function DayCard({
       </div>
 
       <div className="section-label">Scenes on this day</div>
-      <div onDragOver={(e) => draggingScene && e.preventDefault()} onDrop={handleSceneDropAtEnd}>
+      <div>
         {assigned.map((scene, i) => (
           <div
             className={`assigned-scene-row ${
               draggingScene && draggingScene.assignmentId === scene.assignment_id ? 'dragging' : ''
             }`}
             key={scene.assignment_id}
-            draggable
-            onDragStart={handleSceneDragStart(scene.assignment_id)}
-            onDragEnd={() => setDraggingScene(null)}
-            onDragOver={handleSceneDragOver}
-            onDrop={handleSceneDropOnRow(i)}
+            data-scene-row
+            data-day-id={day.id}
+            data-row-index={i}
           >
             <span className="flex-row" style={{ gap: 8 }}>
-              <span className="drag-handle" title="Drag to reorder, or drop on another day">
+              <span
+                className="drag-handle"
+                title="Drag to reorder, or drop on another day"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onStartSceneDrag(scene.assignment_id);
+                }}
+              >
                 ⠿
               </span>
               <span>
