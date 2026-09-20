@@ -10,7 +10,15 @@ const router = express.Router();
 function withElements(scene) {
   if (!scene) return scene;
   const elements = db.prepare('SELECT * FROM scene_elements WHERE scene_id = ? ORDER BY category, id').all(scene.id);
-  return { ...scene, elements };
+  let script_elements = null;
+  if (scene.script_elements) {
+    try {
+      script_elements = JSON.parse(scene.script_elements);
+    } catch {
+      script_elements = null;
+    }
+  }
+  return { ...scene, script_elements, elements };
 }
 
 router.get('/', (req, res) => {
@@ -69,9 +77,14 @@ router.put('/:id', (req, res) => {
     status,
     order_index,
   } = req.body;
+  // A direct synopsis edit invalidates whatever per-line formatting a PDF
+  // import classified for this scene -- there's no way to know which line a
+  // hand-typed edit belongs to, so it falls back to plain text until the
+  // scene is re-imported.
+  const script_elements = synopsis === undefined ? existing.script_elements : null;
   db.prepare(
     `UPDATE scenes SET scene_number = ?, heading = ?, int_ext = ?, day_night = ?, location_id = ?,
-       synopsis = ?, page_count = ?, status = ?, order_index = ? WHERE id = ?`
+       synopsis = ?, script_elements = ?, page_count = ?, status = ?, order_index = ? WHERE id = ?`
   ).run(
     scene_number ?? existing.scene_number,
     heading ?? existing.heading,
@@ -79,6 +92,7 @@ router.put('/:id', (req, res) => {
     day_night ?? existing.day_night,
     location_id === undefined ? existing.location_id : location_id,
     synopsis ?? existing.synopsis,
+    script_elements,
     page_count ?? existing.page_count,
     status ?? existing.status,
     order_index === undefined ? existing.order_index : order_index,

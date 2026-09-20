@@ -118,6 +118,15 @@ const shotColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.na
   }
 });
 
+const sceneColumns = db.prepare('PRAGMA table_info(scenes)').all().map((c) => c.name);
+if (!sceneColumns.includes('script_elements')) {
+  // JSON array of {type, text} screenplay elements (action/character/parenthetical/
+  // dialogue/transition) classified from a PDF import's text positions, used to
+  // render the scene body as formatted script instead of a flattened paragraph.
+  // NULL for scenes that weren't imported from a PDF, or whose text was hand-edited.
+  db.exec('ALTER TABLE scenes ADD COLUMN script_elements TEXT');
+}
+
 migrateCastNameToRole(db);
 backfillCastContacts(db);
 

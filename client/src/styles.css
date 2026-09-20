@@ -707,3 +707,63 @@ tr.dragging {
 .shotlist-table tbody tr.striped {
   background: #f7f7f7;
 }
+
+/* Screenplay formatted view -- renders a scene's classified body elements
+   (scene heading, action, character, parenthetical, dialogue, transition)
+   with the margins a Letter-sized screenplay page uses, so imported text
+   reads the way it did in the source PDF instead of as a flattened
+   paragraph. Margins are in absolute inches/px per industry convention,
+   not relative to this container, since they're standardized against the
+   page itself. */
+.screenplay-view {
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12pt;
+  line-height: 1.5;
+  padding: 24px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+/* Each type below sets all four margin sides explicitly (zero for any side
+   the screenplay-format spec doesn't call for) rather than relying on a
+   separate `.screenplay-view p { margin: 0 }` reset -- a <p> carrying one of
+   these classes also matches that reset via a MORE specific selector
+   (element + class beats class alone), which would silently override these
+   longhand margins regardless of source order. Self-contained rules avoid
+   depending on cascade specificity to render correctly. */
+
+.scene-heading {
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 1in 0 0.5in 1.5in;
+}
+
+.action {
+  margin: 0 1in 15px 1.5in;
+}
+
+.character {
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 700;
+  margin: 10px 1.5in 0 3.5in;
+}
+
+.parenthetical {
+  font-style: italic;
+  text-align: center;
+  margin: 0 2.5in;
+}
+
+.dialogue {
+  margin: 0 2in 15px;
+}
+
+.transition {
+  text-transform: uppercase;
+  text-align: right;
+  margin: 15px 1in 15px 1.5in;
+}

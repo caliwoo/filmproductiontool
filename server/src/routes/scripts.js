@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const db = require('../db');
-const { parseScriptText } = require('../scriptParser');
+const { parseScriptLines } = require('../scriptParser');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -15,11 +15,53 @@ const upload = multer({
 
 const router = express.Router();
 
+// pdf-parse's default text renderer only tracks line breaks (by Y position) --
+// it drops each item's horizontal position entirely, so there's no way to
+// tell a character cue from an action line once the text comes back. This
+// collects each page's lines as `{ text, x }` instead: `x` is the left-edge
+// point-position of a line's first real glyph, read straight from pdf.js's
+// own item geometry (not reconstructed or guessed), which the parser uses to
+// classify each line into a screenplay element type. Lines are gathered into
+// `allLines` via closure rather than returned as pagerender's string, since
+// we need structured data, not text pdf-parse would just concatenate.
+function createPageCollector(allLines) {
+  return function collectPage(pageData) {
+    const renderOptions = { normalizeWhitespace: false, disableCombineTextItems: false };
+    return pageData.getTextContent(renderOptions).then((textContent) => {
+      let lastY = null;
+      let lineText = '';
+      let lineX = null;
+
+      const flushLine = () => {
+        allLines.push({ text: lineText.replace(/\s+/g, ' ').trim(), x: lineX });
+      };
+
+      textContent.items.forEach((item) => {
+        const y = item.transform[5];
+        if (lastY !== null && y !== lastY) {
+          flushLine();
+          lineText = '';
+          lineX = null;
+        }
+        if (lineX === null && item.str.trim() !== '') {
+          lineX = item.transform[4];
+        }
+        lineText += item.str;
+        lastY = y;
+      });
+      if (lastY !== null) flushLine();
+
+      return '';
+    });
+  };
+}
+
 router.post('/parse', upload.single('script'), async (req, res, next) => {
   if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' });
   try {
-    const data = await pdfParse(req.file.buffer);
-    const scenes = parseScriptText(data.text, { numPages: data.numpages });
+    const allLines = [];
+    const data = await pdfParse(req.file.buffer, { pagerender: createPageCollector(allLines) });
+    const scenes = parseScriptLines(allLines, { numPages: data.numpages });
     if (scenes.length === 0) {
       return res
         .status(422)
@@ -43,8 +85,8 @@ router.post('/import', (req, res) => {
     .get(project_id).m;
 
   const insert = db.prepare(
-    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, synopsis, page_count, order_index)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, synopsis, script_elements, page_count, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const insertedIds = [];
@@ -57,6 +99,7 @@ router.post('/import', (req, res) => {
         s.int_ext || 'INT',
         s.day_night || 'DAY',
         s.synopsis || '',
+        Array.isArray(s.script_elements) ? JSON.stringify(s.script_elements) : null,
         Number(s.page_count) || 1,
         maxOrder + 1 + i
       );
@@ -65,10 +108,18 @@ router.post('/import', (req, res) => {
   });
   tx(scenes);
 
-  const created = insertedIds.map((id) => ({
-    ...db.prepare('SELECT * FROM scenes WHERE id = ?').get(id),
-    elements: [],
-  }));
+  const created = insertedIds.map((id) => {
+    const row = db.prepare('SELECT * FROM scenes WHERE id = ?').get(id);
+    let script_elements = null;
+    if (row.script_elements) {
+      try {
+        script_elements = JSON.parse(row.script_elements);
+      } catch {
+        script_elements = null;
+      }
+    }
+    return { ...row, script_elements, elements: [] };
+  });
   res.status(201).json(created);
 });
 

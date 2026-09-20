@@ -3,6 +3,7 @@ import api from '../api.js';
 import ShotList from './ShotList.jsx';
 import AiTagDialog from './AiTagDialog.jsx';
 import PageLengthInput from './PageLengthInput.jsx';
+import ScreenplayView from './ScreenplayView.jsx';
 import { formatPageLength } from '../pageLength.js';
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
@@ -15,6 +16,9 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [showAiTag, setShowAiTag] = useState(false);
   const [showNewLocation, setShowNewLocation] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
+  const [editingSynopsis, setEditingSynopsis] = useState(false);
+
+  const hasFormattedScript = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
 
   const location = locations.find((l) => l.id === scene.location_id);
 
@@ -194,12 +198,29 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             </p>
           )}
 
-          <textarea
-            placeholder="Synopsis"
-            style={{ width: '100%', marginTop: 10, minHeight: 50 }}
-            defaultValue={scene.synopsis}
-            onBlur={(e) => updateField('synopsis', e.target.value)}
-          />
+          {hasFormattedScript && !editingSynopsis ? (
+            <div style={{ marginTop: 10 }}>
+              <ScreenplayView elements={scene.script_elements} />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ marginTop: 8, fontSize: 12, padding: '5px 10px' }}
+                onClick={() => setEditingSynopsis(true)}
+              >
+                Edit text
+              </button>
+            </div>
+          ) : (
+            <textarea
+              placeholder="Synopsis"
+              style={{ width: '100%', marginTop: 10, minHeight: 50 }}
+              defaultValue={scene.synopsis}
+              onBlur={(e) => {
+                updateField('synopsis', e.target.value);
+                setEditingSynopsis(false);
+              }}
+            />
+          )}
 
           <div className="section-label flex-row" style={{ justifyContent: 'space-between' }}>
             <span>Breakdown Elements</span>
