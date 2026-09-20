@@ -42,6 +42,12 @@ textarea {
   color: var(--text);
 }
 
+.screenplay-text {
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre;
+  line-height: 1.4;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
