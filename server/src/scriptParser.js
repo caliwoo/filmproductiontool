@@ -86,7 +86,12 @@ function parseScriptText(text, { numPages } = {}) {
         const trimmed = trimmedLines[idx + 1 + li];
         return trimmed && !PAGE_ARTIFACT_RE.test(trimmed);
       });
-    const synopsis = bodyLines.join('\n').slice(0, 8000).trim();
+    // No .trim() here: bodyLines already excludes blank/artifact lines, and
+    // trimming the *joined* string would strip only the first line's
+    // reconstructed left margin (since trim only touches the very start/end
+    // of the whole string), leaving it flush while every wrapped
+    // continuation line below it keeps its indent.
+    const synopsis = bodyLines.join('\n').slice(0, 8000);
     const page_count = avgLinesPerPage ? roundToEighth((nextIdx - idx) / avgLinesPerPage) : 1;
 
     return {
