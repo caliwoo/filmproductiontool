@@ -94,7 +94,9 @@ router.post('/:id/build-schedule/preview', (req, res) => {
   }
 
   const pagesPerDay = Number(req.body.pagesPerDay) || 5;
-  const { days, excludedScenes } = buildSchedulePreview(db, req.params.id, { pagesPerDay });
+  const startDate = req.body.startDate || null;
+  const workDaysPerWeek = Number(req.body.workDaysPerWeek) === 6 ? 6 : 5;
+  const { days, excludedScenes } = buildSchedulePreview(db, req.params.id, { pagesPerDay, startDate, workDaysPerWeek });
 
   if (days.length === 0) {
     return res.status(422).json({

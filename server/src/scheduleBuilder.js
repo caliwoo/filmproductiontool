@@ -32,6 +32,33 @@ function minutesToTime(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+// A 6-day week treats Mon-Sat as shoot days (Sunday off); a 5-day week
+// treats Mon-Fri as shoot days (Saturday and Sunday off). This is what
+// actually turns a chosen workweek length into rest days on the calendar --
+// the schedule doesn't otherwise track hours worked, so it can't check a
+// rest-period rule's hour minimums directly, but it can keep the right
+// number of full days off between weeks.
+function isWorkDay(date, workDaysPerWeek) {
+  const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+  return workDaysPerWeek === 6 ? day !== 0 : day >= 1 && day <= 5;
+}
+
+// Assigns each shoot day the next available date on that calendar, in
+// order, starting from (and including, if eligible) startDate. Returns the
+// days unchanged if no start date was given, so date assignment stays
+// entirely optional.
+function assignShootDates(days, startDate, workDaysPerWeek) {
+  if (!startDate) return days;
+  const cursor = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(cursor.getTime())) return days;
+
+  return days.map((day, i) => {
+    if (i > 0) cursor.setDate(cursor.getDate() + 1);
+    while (!isWorkDay(cursor, workDaysPerWeek)) cursor.setDate(cursor.getDate() + 1);
+    return { ...day, shoot_date: cursor.toISOString().slice(0, 10) };
+  });
+}
+
 // A scene only enters the auto-schedule once it's actually been worked:
 // tagged with at least one breakdown element and given at least one shot.
 // Scenes that are still just a heading get left out, with a reason, so an
@@ -97,7 +124,7 @@ function clusterLocationsByLeadCast(baseOrderKeys, sharedLeadCastCount) {
   return result;
 }
 
-function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
+function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null, workDaysPerWeek = 5 } = {}) {
   const allScenes = db.prepare('SELECT * FROM scenes WHERE project_id = ? ORDER BY order_index, id').all(projectId);
   const { ready: scenes, excluded: excludedScenes } = readinessFilter(db, allScenes);
   const locations = db.prepare('SELECT * FROM locations WHERE project_id = ?').all(projectId);
@@ -248,12 +275,12 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5 } = {}) {
     };
   });
 
-  return { days, excludedScenes };
+  return { days: assignShootDates(days, startDate, workDaysPerWeek), excludedScenes };
 }
 
 function commitSchedule(db, projectId, days) {
   const insertDay = db.prepare(
-    `INSERT INTO shoot_days (project_id, day_number, general_call_time, location_id) VALUES (?, ?, ?, ?)`
+    `INSERT INTO shoot_days (project_id, day_number, shoot_date, general_call_time, location_id) VALUES (?, ?, ?, ?, ?)`
   );
   const insertSceneAssignment = db.prepare(
     `INSERT INTO shoot_day_scenes (shoot_day_id, scene_id, order_index, scheduled_time, estimated_minutes)
@@ -266,6 +293,7 @@ function commitSchedule(db, projectId, days) {
       const shootDayId = insertDay.run(
         projectId,
         day.day_number || dayIndex + 1,
+        day.shoot_date || '',
         day.general_call_time || '',
         day.location_id || null
       ).lastInsertRowid;

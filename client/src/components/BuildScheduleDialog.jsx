@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import api from '../api.js';
+import { SCHEDULE_RULES } from '../scheduleRules.js';
 
 export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
   const [pagesPerDay, setPagesPerDay] = useState(5);
+  const [startDate, setStartDate] = useState('');
+  const [workDaysPerWeek, setWorkDaysPerWeek] = useState(5);
+  const [ruleKey, setRuleKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -10,11 +14,17 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
   const [existingDaysCount, setExistingDaysCount] = useState(0);
   const [error, setError] = useState('');
 
+  const selectedRule = SCHEDULE_RULES.find((r) => r.key === ruleKey) || null;
+
   async function handleGenerate() {
     setLoading(true);
     setError('');
     try {
-      const result = await api.post(`/projects/${projectId}/build-schedule/preview`, { pagesPerDay });
+      const result = await api.post(`/projects/${projectId}/build-schedule/preview`, {
+        pagesPerDay,
+        startDate: startDate || null,
+        workDaysPerWeek,
+      });
       setPreview(result.days);
       setExcludedScenes(result.excludedScenes || []);
       setExistingDaysCount(result.existingDaysCount);
@@ -77,22 +87,71 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
           )}
 
           {!preview && (
-            <div className="inline-form">
-              <label className="flex-row" style={{ gap: 6 }}>
-                Pages per day:
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  style={{ width: 70 }}
-                  value={pagesPerDay}
-                  onChange={(e) => setPagesPerDay(Number(e.target.value))}
-                />
-              </label>
-              <button className="btn" onClick={handleGenerate} disabled={loading}>
-                {loading ? 'Generating...' : 'Generate Schedule'}
-              </button>
-            </div>
+            <>
+              <div className="inline-form">
+                <label className="flex-row" style={{ gap: 6 }}>
+                  Pages per day:
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    style={{ width: 70 }}
+                    value={pagesPerDay}
+                    onChange={(e) => setPagesPerDay(Number(e.target.value))}
+                  />
+                </label>
+                <label className="flex-row" style={{ gap: 6 }}>
+                  Start date (optional):
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                </label>
+              </div>
+
+              <div className="inline-form">
+                <label className="flex-row" style={{ gap: 6 }}>
+                  Workweek:
+                  <select value={workDaysPerWeek} onChange={(e) => setWorkDaysPerWeek(Number(e.target.value))}>
+                    <option value={5}>5-day week (Mon&ndash;Fri, weekends off)</option>
+                    <option value={6}>6-day week (Mon&ndash;Sat, Sunday off)</option>
+                  </select>
+                </label>
+                <label className="flex-row" style={{ gap: 6, flex: 1 }}>
+                  Rest-period rules:
+                  <select style={{ flex: 1 }} value={ruleKey} onChange={(e) => setRuleKey(e.target.value)}>
+                    <option value="">None / general reference only</option>
+                    {SCHEDULE_RULES.map((r) => (
+                      <option key={r.key} value={r.key}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {selectedRule && (
+                <div className="card" style={{ marginTop: 10, fontSize: 13 }}>
+                  <div style={{ marginBottom: 4 }}>
+                    <strong>Daily rest:</strong> {selectedRule.dailyRest}
+                  </div>
+                  <div style={{ marginBottom: 4 }}>
+                    <strong>Weekly rest ({workDaysPerWeek}-day week):</strong> {selectedRule.weeklyRest[workDaysPerWeek]}
+                  </div>
+                  <div className="muted">Source: {selectedRule.source}</div>
+                </div>
+              )}
+
+              {startDate ? null : (
+                <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+                  Leave the start date blank to schedule without calendar dates &mdash; set them later on each shoot
+                  day.
+                </p>
+              )}
+
+              <div className="inline-form">
+                <button className="btn" onClick={handleGenerate} disabled={loading}>
+                  {loading ? 'Generating...' : 'Generate Schedule'}
+                </button>
+              </div>
+            </>
           )}
 
           {preview && (
@@ -104,12 +163,21 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
                 </div>
               )}
               <p className="muted">{preview.length} shoot day(s) proposed.</p>
+              {selectedRule && (
+                <div className="card" style={{ marginBottom: 10, fontSize: 13 }}>
+                  <strong>Reminder &mdash; {selectedRule.label}:</strong> daily rest {selectedRule.dailyRest} Weekly
+                  rest ({workDaysPerWeek}-day week): {selectedRule.weeklyRest[workDaysPerWeek]} This isn&apos;t
+                  enforced automatically &mdash; the schedule doesn&apos;t track call/wrap times precisely enough to
+                  check it, so review actual call times against this before locking the schedule.
+                </div>
+              )}
               {preview.map((day) => (
                 <div className="card" key={day.day_number} style={{ marginBottom: 10 }}>
                   <div className="flex-row" style={{ justifyContent: 'space-between' }}>
                     <strong>
-                      Day {day.day_number} &middot; {day.day_night === 'night' ? 'NIGHT' : 'DAY'} &middot; Call{' '}
-                      {day.general_call_time}
+                      Day {day.day_number}
+                      {day.shoot_date ? ` · ${day.shoot_date}` : ''} &middot;{' '}
+                      {day.day_night === 'night' ? 'NIGHT' : 'DAY'} &middot; Call {day.general_call_time}
                     </strong>
                     <span className="muted">
                       {day.location_name || 'No location'} &middot; {day.total_pages} pages
