@@ -53,6 +53,31 @@ router.delete('/:id', (req, res) => {
   res.status(204).end();
 });
 
+// Applies a full drag-and-drop reorder from the Schedule page in one shot:
+// day order (day_number becomes each day's position in the array) and which
+// day each scene assignment belongs to, plus its order within that day. The
+// browser stages these moves locally; this is the "commit changes" step
+// that makes them permanent.
+router.post('/reorder-all', (req, res) => {
+  const { days } = req.body;
+  if (!Array.isArray(days)) return res.status(400).json({ error: 'days must be an array' });
+
+  const updateDayNumber = db.prepare('UPDATE shoot_days SET day_number = ? WHERE id = ?');
+  const updateAssignment = db.prepare('UPDATE shoot_day_scenes SET shoot_day_id = ?, order_index = ? WHERE id = ?');
+
+  const tx = db.transaction((dayList) => {
+    dayList.forEach((day, dayIndex) => {
+      updateDayNumber.run(dayIndex + 1, day.id);
+      (day.scene_assignment_ids || []).forEach((assignmentId, sceneIndex) => {
+        updateAssignment.run(day.id, sceneIndex, assignmentId);
+      });
+    });
+  });
+  tx(days);
+
+  res.status(204).end();
+});
+
 // --- Scenes assigned to a shoot day (stripboard-lite) ---
 
 router.get('/:id/scenes', (req, res) => {
