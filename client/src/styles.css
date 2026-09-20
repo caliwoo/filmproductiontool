@@ -364,18 +364,28 @@ th {
   line-height: 1;
 }
 
-.tag.cast { background: #fee2e2; color: #991b1b; }
-.tag.stunts { background: #ffedd5; color: #9a3412; }
-.tag.props { background: #dbeafe; color: #1e40af; }
-.tag.wardrobe { background: #fef3c7; color: #92400e; }
-.tag.locations { background: #dcfce7; color: #166534; }
-.tag.vehicles { background: #e0e7ff; color: #3730a3; }
-.tag.sfx { background: #fae8ff; color: #86198f; }
-.tag.sound { background: #cffafe; color: #155e75; }
-.tag.makeup { background: #ffe4e6; color: #9f1239; }
-.tag.animals { background: #ecfccb; color: #3f6212; }
-.tag.extras { background: #f3e8ff; color: #6b21a8; }
-.tag.notes { background: #f1f5f9; color: #334155; }
+.tag.cast, .highlight.cast { background: #fee2e2; color: #991b1b; }
+.tag.stunts, .highlight.stunts { background: #ffedd5; color: #9a3412; }
+.tag.props, .highlight.props { background: #dbeafe; color: #1e40af; }
+.tag.wardrobe, .highlight.wardrobe { background: #fef3c7; color: #92400e; }
+.tag.locations, .highlight.locations { background: #dcfce7; color: #166534; }
+.tag.vehicles, .highlight.vehicles { background: #e0e7ff; color: #3730a3; }
+.tag.sfx, .highlight.sfx { background: #fae8ff; color: #86198f; }
+.tag.sound, .highlight.sound { background: #cffafe; color: #155e75; }
+.tag.makeup, .highlight.makeup { background: #ffe4e6; color: #9f1239; }
+.tag.animals, .highlight.animals { background: #ecfccb; color: #3f6212; }
+.tag.extras, .highlight.extras { background: #f3e8ff; color: #6b21a8; }
+.tag.notes, .highlight.notes { background: #f1f5f9; color: #334155; }
+
+/* Highlights a tagged breakdown element's occurrences directly in the
+   formatted screenplay text (ScreenplayView), in that element's tag color,
+   so a scene's cast/props/etc. are visible in context, not just in the tag
+   list below it. */
+mark.highlight {
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-weight: 700;
+}
 
 .badge {
   font-size: 11px;

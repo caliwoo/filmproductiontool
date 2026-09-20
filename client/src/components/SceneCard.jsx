@@ -200,7 +200,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
 
           {hasFormattedScript && !editingSynopsis ? (
             <div style={{ marginTop: 10 }}>
-              <ScreenplayView elements={scene.script_elements} />
+              <ScreenplayView elements={scene.script_elements} tags={scene.elements} />
               <button
                 type="button"
                 className="btn btn-secondary"
