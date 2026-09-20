@@ -64,7 +64,7 @@ export default function DayCard({
             title="Drag to reorder days"
             onMouseDown={(e) => {
               e.preventDefault();
-              onStartDayDrag();
+              onStartDayDrag(e.clientX, e.clientY);
             }}
           >
             ⠿
@@ -136,7 +136,12 @@ export default function DayCard({
                 title="Drag to reorder, or drop on another day"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onStartSceneDrag(scene.assignment_id);
+                  onStartSceneDrag(
+                    scene.assignment_id,
+                    `${scene.scene_number}. ${scene.heading}`,
+                    e.clientX,
+                    e.clientY
+                  );
                 }}
               >
                 ⠿

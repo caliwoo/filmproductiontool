@@ -479,6 +479,26 @@ body.dnd-active * {
   opacity: 0.4;
 }
 
+.drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  transform: translate(14px, -50%) rotate(-2deg);
+  pointer-events: none;
+  background: var(--panel, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #111);
+  opacity: 0.85;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .day-card-header {
   cursor: default;
 }

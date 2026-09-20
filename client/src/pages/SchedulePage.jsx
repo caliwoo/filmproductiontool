@@ -18,6 +18,7 @@ export default function SchedulePage() {
   const [saving, setSaving] = useState(false);
   const [draggingDayId, setDraggingDayId] = useState(null);
   const [draggingScene, setDraggingScene] = useState(null); // { fromDayId, assignmentId }
+  const [ghost, setGhost] = useState(null); // { label, x, y }
 
   function load() {
     Promise.all([
@@ -102,15 +103,24 @@ export default function SchedulePage() {
   // native drag/drop DOM events turn out to be unreliable to actually
   // initiate from a real mouse in some browsers/environments. This tracks
   // the drag with plain mousedown/mouseup and resolves the drop target from
-  // the cursor position, which works everywhere a mouse does.
-  function startDrag(kind, payload) {
+  // the cursor position, which works everywhere a mouse does. A translucent
+  // label follows the cursor the whole time, mimicking the native drag
+  // image a browser would otherwise draw for you.
+  function startDrag(kind, payload, label, x, y) {
     if (kind === 'day') setDraggingDayId(payload.dayId);
     else setDraggingScene(payload);
+    setGhost({ label, x, y });
     document.body.classList.add('dnd-active');
 
+    function onMove(e) {
+      setGhost((g) => (g ? { ...g, x: e.clientX, y: e.clientY } : g));
+    }
+
     function finish(e) {
+      window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', finish);
       document.body.classList.remove('dnd-active');
+      setGhost(null);
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const dayEl = el && el.closest('[data-day-card]');
@@ -135,6 +145,7 @@ export default function SchedulePage() {
       setDraggingScene(null);
     }
 
+    window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', finish);
   }
 
@@ -210,8 +221,10 @@ export default function SchedulePage() {
             onDelete={() => setDayToDelete(day)}
             draggingDayId={draggingDayId}
             draggingScene={draggingScene}
-            onStartDayDrag={() => startDrag('day', { dayId: day.id })}
-            onStartSceneDrag={(assignmentId) => startDrag('scene', { fromDayId: day.id, assignmentId })}
+            onStartDayDrag={(x, y) => startDrag('day', { dayId: day.id }, `Day ${index + 1}`, x, y)}
+            onStartSceneDrag={(assignmentId, label, x, y) =>
+              startDrag('scene', { fromDayId: day.id, assignmentId }, label, x, y)
+            }
             dayIndex={index}
           />
         ))}
@@ -226,6 +239,12 @@ export default function SchedulePage() {
           onConfirm={confirmDeleteDay}
           onCancel={() => setDayToDelete(null)}
         />
+      )}
+
+      {ghost && (
+        <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>
+          {ghost.label}
+        </div>
       )}
     </div>
   );
