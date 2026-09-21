@@ -10,6 +10,7 @@ export default function ShotListPage() {
   const [rows, setRows] = useState(null);
   const [groupBySetup, setGroupBySetup] = useState(false);
   const [error, setError] = useState('');
+  const [sceneIdsWithShots, setSceneIdsWithShots] = useState(new Set());
 
   useEffect(() => {
     api
@@ -17,6 +18,27 @@ export default function ShotListPage() {
       .then(setScenes)
       .catch((err) => setError(err.message));
   }, [projectId]);
+
+  // Drives the "Shot List" readiness badge on each collapsed scene row below
+  // -- fetched once up front (one project-scoped call) rather than lazily
+  // per scene, since a scene's own shots normally only load once its panel
+  // is opened.
+  useEffect(() => {
+    api
+      .get(`/projects/${projectId}/shot-list`)
+      .then((result) => setSceneIdsWithShots(new Set(result.rows.map((r) => r.scene_id))))
+      .catch((err) => setError(err.message));
+  }, [projectId]);
+
+  function handleSceneShotsChange(sceneId, hasShots) {
+    setSceneIdsWithShots((prev) => {
+      if (hasShots === prev.has(sceneId)) return prev;
+      const next = new Set(prev);
+      if (hasShots) next.add(sceneId);
+      else next.delete(sceneId);
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (tab !== 'report') return;
@@ -68,7 +90,12 @@ export default function ShotListPage() {
             <strong>Create Shot List (AI)</strong>.
           </p>
           {scenes.map((scene) => (
-            <SceneShotPanel key={scene.id} scene={scene} />
+            <SceneShotPanel
+              key={scene.id}
+              scene={scene}
+              hasShots={sceneIdsWithShots.has(scene.id)}
+              onShotsChange={handleSceneShotsChange}
+            />
           ))}
           {scenes.length === 0 && <p className="empty-state">No scenes yet. Add scenes in Script Breakdown first.</p>}
         </>
