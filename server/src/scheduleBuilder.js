@@ -8,13 +8,24 @@
 //     that day or not, so gaps between their days are wasted money)
 //   - tackle higher-complexity scenes (stunts/sfx/vehicles/extras) earlier
 //   - never mix DAY and NIGHT scenes in the same shoot day (turnarounds)
-//   - cap each day at a target page count
+//   - cap each day at a target page count, charging a page-equivalent
+//     "company move" penalty against that cap each time the location
+//     changes mid-day -- so a second (or third) location can share a day
+//     when there's still room under the cap, rather than always forcing a
+//     new day at every location boundary
 //   - within a day, scenes tagged with animals go first (early-in-day rule;
 //     there's no separate "minor" tag to apply the same rule to)
 // It does not know actor availability, legal minor hour limits, weather
-// forecasts, or budget -- those need a human pass after generating this.
+// forecasts, budget, or real-world geographic distance between locations
+// (a company move is charged the same whether the two locations are next
+// door or across town) -- those need a human pass after generating this.
 
 const COMPLEXITY_WEIGHT = { stunts: 3, sfx: 3, vehicles: 2, extras: 2, animals: 2 };
+
+// Page-equivalent cost charged against a day's page cap each time the crew
+// changes location mid-day, so a multi-location day isn't packed as if the
+// move itself took zero time.
+const LOCATION_MOVE_PAGE_PENALTY = 0.5;
 
 function dayNightGroup(dayNight) {
   return dayNight === 'NIGHT' ? 'night' : 'day';
@@ -210,8 +221,12 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
     return a.order_index - b.order_index;
   });
 
-  // Bin-pack into days: cap pages/day, never mix day/night or locations in one day
-  // (a company move mid-day isn't something this heuristic attempts).
+  // Bin-pack into days: cap pages/day, never mix day/night in one day. A
+  // location change mid-day is allowed as long as the day still fits under
+  // the page cap once the move penalty is charged against it -- `totalPages`
+  // stays the true sum of scene pages (what's shown to the user), while
+  // `budgetUsed` (totalPages plus any move penalties) is what's actually
+  // checked against the cap.
   const rawDays = [];
   let current = null;
 
@@ -219,17 +234,22 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
     const group = dayNightGroup(scene.day_night);
     const locKey = scene.location_id ?? 'none';
     const pages = Number(scene.page_count) || 0;
-    const wouldOverflow = current && current.scenes.length > 0 && current.totalPages + pages > pagesPerDay;
+    const isLocationChange = current && current.scenes.length > 0 && current.lastLocKey !== locKey;
+    const movePenalty = isLocationChange ? LOCATION_MOVE_PAGE_PENALTY : 0;
+    const wouldOverflow = current && current.scenes.length > 0 && current.budgetUsed + movePenalty + pages > pagesPerDay;
     const mismatchedGroup = current && current.dnGroup !== group;
-    const mismatchedLocation = current && current.locKey !== locKey;
 
-    if (!current || wouldOverflow || mismatchedGroup || mismatchedLocation) {
-      current = { scenes: [], totalPages: 0, dnGroup: group, locKey };
+    if (!current || wouldOverflow || mismatchedGroup) {
+      current = { scenes: [], totalPages: 0, budgetUsed: 0, dnGroup: group, lastLocKey: locKey };
       rawDays.push(current);
+    } else if (isLocationChange) {
+      current.budgetUsed += LOCATION_MOVE_PAGE_PENALTY;
     }
 
     current.scenes.push(scene);
     current.totalPages += pages;
+    current.budgetUsed += pages;
+    current.lastLocKey = locKey;
   });
 
   // Within a day, animal-tagged scenes go first (early-call rule).
@@ -238,7 +258,11 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
   });
 
   const days = rawDays.map((day, i) => {
-    const locationId = day.locKey === 'none' ? null : day.locKey;
+    // A day's own location_id/name is its FIRST scene's location -- used for
+    // the shoot day's default call-sheet location and weather lookup, since
+    // shoot_days only stores one. A day spanning multiple locations still
+    // shows each scene's own actual location in its own row below.
+    const locationId = day.scenes[0]?.location_id ?? null;
     const leadCastToday = new Set();
     day.scenes.forEach((scene) => leadCastInScene(scene.id).forEach((name) => leadCastToday.add(name)));
 
