@@ -4,6 +4,7 @@ import api from '../api.js';
 import DayCard from '../components/DayCard.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import BuildScheduleDialog from '../components/BuildScheduleDialog.jsx';
+import { castNumbersByRole } from '../castId.js';
 
 export default function SchedulePage() {
   const { projectId } = useOutletContext();
@@ -30,17 +31,7 @@ export default function SchedulePage() {
         setDays(dayRows);
         setScenes(sceneRows);
 
-        // Stripboard-style Cast ID#: a compact stand-in for the full name,
-        // numbered in the order each cast member was first introduced.
-        const castMap = {};
-        contactRows
-          .filter((c) => c.department === 'cast')
-          .sort((a, b) => a.id - b.id)
-          .forEach((c, i) => {
-            const key = (c.role || '').trim().toUpperCase();
-            if (key) castMap[key] = i + 1;
-          });
-        setCastNumberByName(castMap);
+        setCastNumberByName(castNumbersByRole(contactRows));
 
         return Promise.all(dayRows.map((d) => api.get(`/shoot-days/${d.id}/scenes`))).then((perDay) => {
           const map = {};

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import { castNumbersByRole } from '../castId.js';
 
 const DEPARTMENTS = ['cast', 'crew', 'production', 'vendor'];
 
@@ -45,6 +46,10 @@ export default function ContactsPage() {
     }
   }
 
+  // Same Cast ID# shown on Schedule stripboard rows and call sheets, so a
+  // character's number here matches everywhere else it appears.
+  const castNumbers = castNumbersByRole(contacts);
+
   return (
     <div>
       <div className="page-header">
@@ -57,6 +62,7 @@ export default function ContactsPage() {
           <thead>
             <tr>
               <th>{'Name'}</th>
+              <th title="Stripboard-style Cast ID#, same number shown on Schedule and call sheets">Cast ID</th>
               <th>{'Role / Character'}</th>
               <th>Department</th>
               <th title="Lead cast get priority for a schedule with fewer days off">Lead</th>
@@ -74,6 +80,9 @@ export default function ContactsPage() {
                     placeholder={c.department === 'cast' ? 'Actor name (once cast)' : 'Name'}
                     onBlur={(e) => e.target.value !== c.name && updateContact(c.id, 'name', e.target.value)}
                   />
+                </td>
+                <td className="muted" style={{ textAlign: 'center' }}>
+                  {c.department === 'cast' ? castNumbers[(c.role || '').trim().toUpperCase()] || '—' : '—'}
                 </td>
                 <td>
                   <input
@@ -126,7 +135,7 @@ export default function ContactsPage() {
             ))}
             {contacts.length === 0 && (
               <tr>
-                <td colSpan={7} className="muted">
+                <td colSpan={8} className="muted">
                   No contacts yet.
                 </td>
               </tr>
