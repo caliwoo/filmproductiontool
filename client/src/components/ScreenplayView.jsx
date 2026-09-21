@@ -1,3 +1,5 @@
+import { markedShotColors } from '../shotColors.js';
+
 const TYPE_CLASS = {
   scene_heading: 'scene-heading',
   action: 'action',
@@ -6,23 +8,6 @@ const TYPE_CLASS = {
   dialogue: 'dialogue',
   transition: 'transition',
 };
-
-// Distinct from the breakdown-element highlight palette (which colors text
-// inline) so a shot cut-mark is never mistaken for a tagged cast/prop
-// highlight -- a cut-mark is a circled number breaking the text flow, not a
-// text color.
-const SHOT_COLORS = [
-  '#2563eb',
-  '#dc2626',
-  '#16a34a',
-  '#9333ea',
-  '#ea580c',
-  '#0891b2',
-  '#db2777',
-  '#65a30d',
-  '#7c3aed',
-  '#0d9488',
-];
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -80,8 +65,10 @@ function highlightText(text, tags) {
 // script by hand to show where a new setup's coverage begins. Markers on
 // the same line are sorted so multiple cuts within one line appear in the
 // right order; breakdown-tag highlighting still applies within each
-// resulting segment.
-function renderLine(text, tags, markers) {
+// resulting segment. Each mark is clickable, jumping to that shot's row in
+// the shot list below (via onMarkClick), so the mark is a real reference
+// into the list rather than just a static annotation.
+function renderLine(text, tags, markers, onMarkClick) {
   if (!markers.length) return highlightText(text, tags);
 
   const parts = [];
@@ -92,9 +79,16 @@ function renderLine(text, tags, markers) {
     parts.push(
       <span
         key={`m${m.id}`}
+        id={`shot-mark-${m.id}`}
         className="shot-cut-mark"
         style={{ borderColor: m.color, color: m.color }}
-        title={`Shot ${m.shot_number}${m.description ? `: ${m.description}` : ''}`}
+        title={`Shot ${m.shot_number}${m.description ? `: ${m.description}` : ''} — click to jump to it in the shot list`}
+        role="button"
+        tabIndex={0}
+        onClick={() => onMarkClick && onMarkClick(m.id)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && onMarkClick) onMarkClick(m.id);
+        }}
       >
         {m.shot_number}
       </span>
@@ -105,31 +99,40 @@ function renderLine(text, tags, markers) {
   return parts;
 }
 
-export default function ScreenplayView({ elements, tags, shots }) {
+export default function ScreenplayView({ elements, tags, shots, onMarkClick }) {
   // Only a shot the AI (or an edit) placed at a specific point in the text
   // can be marked -- manually-added shots have no marker and just don't
   // appear here, same as before this feature existed.
   const markedShots = (shots || []).filter((s) => Number.isInteger(s.marker_line) && Number.isInteger(s.marker_offset));
-  const colorForShot = (id) => SHOT_COLORS[markedShots.findIndex((s) => s.id === id) % SHOT_COLORS.length];
+  const colors = markedShotColors(shots);
   const markersForLine = (index) =>
     markedShots
       .filter((s) => s.marker_line === index)
-      .map((s) => ({ id: s.id, offset: s.marker_offset, shot_number: s.shot_number, description: s.description, color: colorForShot(s.id) }))
+      .map((s) => ({ id: s.id, offset: s.marker_offset, shot_number: s.shot_number, description: s.description, color: colors.get(s.id) }))
       .sort((a, b) => a.offset - b.offset);
 
   return (
     <div className="screenplay-view">
       {elements.map((el, i) => (
         <p key={i} className={TYPE_CLASS[el.type] || 'action'}>
-          {renderLine(el.text, tags, markersForLine(i))}
+          {renderLine(el.text, tags, markersForLine(i), onMarkClick)}
         </p>
       ))}
 
       {markedShots.length > 0 && (
         <div className="shot-marker-legend">
           {markedShots.map((s) => (
-            <span key={s.id} className="shot-marker-legend-item">
-              <span className="shot-cut-mark shot-cut-mark-legend" style={{ borderColor: colorForShot(s.id), color: colorForShot(s.id) }}>
+            <span
+              key={s.id}
+              className="shot-marker-legend-item"
+              role="button"
+              tabIndex={0}
+              onClick={() => onMarkClick && onMarkClick(s.id)}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && onMarkClick) onMarkClick(s.id);
+              }}
+            >
+              <span className="shot-cut-mark shot-cut-mark-legend" style={{ borderColor: colors.get(s.id), color: colors.get(s.id) }}>
                 {s.shot_number}
               </span>
               {s.description || `${s.size} ${s.angle}`.trim() || 'Shot'}

@@ -791,6 +791,7 @@ tr.dragging {
   width: 20px;
   height: 20px;
   margin: 0 2px;
+  padding: 0;
   border: 2px solid currentColor;
   border-radius: 50%;
   background: #fff;
@@ -800,6 +801,20 @@ tr.dragging {
   line-height: 1;
   vertical-align: middle;
   transform: translateY(-1px);
+  cursor: pointer;
+}
+
+/* A shot's mark, its legend entry, and its row indicator are all the same
+   reference to the same shot -- clicking any of them jumps to its
+   counterpart (SceneShotPanel wires the click handlers both ways), so all
+   three get the same hover feedback (inverting to a filled circle)
+   regardless of which element they render as (span, button). The color
+   itself is set inline per shot, so overriding it on hover needs
+   !important -- an inline style otherwise always wins over an external
+   stylesheet rule, hover states included. */
+.shot-cut-mark:hover {
+  background: currentColor;
+  color: #fff !important;
 }
 
 .shot-marker-legend {
@@ -817,6 +832,38 @@ tr.dragging {
 .shot-marker-legend-item {
   display: flex;
   align-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.shot-marker-legend-item:hover {
+  background: #f0f1f3;
+}
+
+@keyframes shot-flash-ring {
+  0% {
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.shot-cut-mark.flash-highlight {
+  animation: shot-flash-ring 1s ease-out;
+}
+
+@keyframes shot-flash-row {
+  0% {
+    background-color: #fef9c3;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tr.flash-highlight td {
+  animation: shot-flash-row 1.2s ease-out;
 }
 
 .shot-cut-mark-legend {

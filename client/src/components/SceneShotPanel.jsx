@@ -16,6 +16,17 @@ export default function SceneShotPanel({ scene }) {
     if (open) loadShots();
   }, [open, scene.id]);
 
+  // Jumps to and briefly flashes an element -- used both ways, so a shot's
+  // mark in the screenplay text and its row in the table below are a real
+  // two-way reference to each other, not just a static annotation.
+  function scrollToAndFlash(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('flash-highlight');
+    window.setTimeout(() => el.classList.remove('flash-highlight'), 1200);
+  }
+
   return (
     <div className="scene-card">
       <div className="scene-header" onClick={() => setOpen(!open)}>
@@ -27,7 +38,12 @@ export default function SceneShotPanel({ scene }) {
       {open && (
         <div className="scene-body">
           {hasFormattedScript ? (
-            <ScreenplayView elements={scene.script_elements} tags={scene.elements} shots={shots} />
+            <ScreenplayView
+              elements={scene.script_elements}
+              tags={scene.elements}
+              shots={shots}
+              onMarkClick={(shotId) => scrollToAndFlash(`shot-row-${shotId}`)}
+            />
           ) : (
             <div className="screenplay-view">
               <p className="action">{scene.synopsis || 'No scene text captured yet.'}</p>
@@ -35,7 +51,12 @@ export default function SceneShotPanel({ scene }) {
           )}
 
           <div style={{ marginTop: 16 }}>
-            <ShotList sceneId={scene.id} shots={shots} onChange={loadShots} />
+            <ShotList
+              sceneId={scene.id}
+              shots={shots}
+              onChange={loadShots}
+              onMarkClick={(shotId) => scrollToAndFlash(`shot-mark-${shotId}`)}
+            />
           </div>
         </div>
       )}

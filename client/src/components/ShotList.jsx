@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api.js';
 import AiShotDialog from './AiShotDialog.jsx';
+import { markedShotColors } from '../shotColors.js';
 
 const SIZES = ['WS', 'MS', 'CU', 'ECU', 'OTS', 'POV', '2-Shot', 'Insert'];
 
@@ -17,10 +18,11 @@ const EMPTY_FORM = {
   equipment: '',
 };
 
-export default function ShotList({ sceneId, shots, onChange: load }) {
+export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [showAiShots, setShowAiShots] = useState(false);
+  const colors = markedShotColors(shots);
 
   async function handleAdd(e) {
     e.preventDefault();
@@ -95,12 +97,26 @@ export default function ShotList({ sceneId, shots, onChange: load }) {
             </thead>
             <tbody>
               {shots.map((shot) => (
-                <tr key={shot.id}>
+                <tr key={shot.id} id={`shot-row-${shot.id}`}>
                   <td>
-                    <input
-                      defaultValue={shot.shot_number}
-                      onBlur={(e) => e.target.value !== shot.shot_number && updateShotField(shot, 'shot_number', e.target.value)}
-                    />
+                    <div className="flex-row" style={{ gap: 4 }}>
+                      {colors.has(shot.id) && (
+                        <button
+                          type="button"
+                          className="shot-cut-mark shot-row-jump"
+                          style={{ borderColor: colors.get(shot.id), color: colors.get(shot.id) }}
+                          title="Jump to this shot's mark in the screenplay preview"
+                          onClick={() => onMarkClick && onMarkClick(shot.id)}
+                        >
+                          {shot.shot_number}
+                        </button>
+                      )}
+                      <input
+                        defaultValue={shot.shot_number}
+                        style={{ minWidth: 40 }}
+                        onBlur={(e) => e.target.value !== shot.shot_number && updateShotField(shot, 'shot_number', e.target.value)}
+                      />
+                    </div>
                   </td>
                   <td>
                     <select defaultValue={shot.size} onChange={(e) => updateShotField(shot, 'size', e.target.value)}>
