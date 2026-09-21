@@ -64,8 +64,6 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
         </div>
 
         <div className="modal-body">
-          {error && <div className="error-banner">{error}</div>}
-
           {!scenes && (
             <div className="upload-drop">
               <p className="muted">
@@ -90,6 +88,9 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
         </div>
 
         <div className="modal-footer">
+          {/* Rendered in the footer, not the scrollable body, so an error from a
+              long scene list stays visible without scrolling back up to see it. */}
+          {error && <div className="error-banner" style={{ marginRight: 'auto' }}>{error}</div>}
           <button className="btn btn-secondary" onClick={onClose}>
             Cancel
           </button>

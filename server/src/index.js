@@ -16,7 +16,11 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+// A full-length screenplay's scenes (synopsis text plus its classified
+// script_elements, which largely duplicates that text) can add up to several
+// hundred KB for a script import -- well past Express's 100kb default, which
+// silently rejected the request before the route handler ever ran.
+app.use(express.json({ limit: '15mb' }));
 
 app.use('/api/projects', projectsRouter);
 app.use('/api/locations', locationsRouter);
@@ -39,7 +43,10 @@ app.get('*', (req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'This request is too large for the server to accept.' });
+  }
+  res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
 });
 
 app.listen(PORT, () => {
