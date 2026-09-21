@@ -3,6 +3,7 @@ const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const db = require('../db');
 const { parseScriptLines, extractTitleInfo } = require('../scriptParser');
+const { ensureLocation } = require('../locationSync');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -91,8 +92,8 @@ router.post('/import', (req, res) => {
     .get(project_id).m;
 
   const insert = db.prepare(
-    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, synopsis, script_elements, page_count, order_index)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO scenes (project_id, scene_number, heading, int_ext, day_night, location_id, synopsis, script_elements, page_count, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const insertedIds = [];
@@ -104,6 +105,7 @@ router.post('/import', (req, res) => {
         s.heading || '',
         s.int_ext || 'INT',
         s.day_night || 'DAY',
+        ensureLocation(db, project_id, s.heading),
         s.synopsis || '',
         Array.isArray(s.script_elements) ? JSON.stringify(s.script_elements) : null,
         Number(s.page_count) || 1,

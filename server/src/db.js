@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 const { backfillCastContacts, migrateCastNameToRole } = require('./castSync');
+const { backfillSceneLocations } = require('./locationSync');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -166,5 +167,6 @@ if (!sceneColumns.includes('script_elements')) {
 
 migrateCastNameToRole(db);
 backfillCastContacts(db);
+backfillSceneLocations(db);
 
 module.exports = db;
