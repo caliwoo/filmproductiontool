@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const db = require('../db');
-const { parseScriptLines } = require('../scriptParser');
+const { parseScriptLines, extractTitleInfo } = require('../scriptParser');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -67,7 +67,13 @@ router.post('/parse', upload.single('script'), async (req, res, next) => {
         .status(422)
         .json({ error: 'No scene headings (INT./EXT.) were detected in this PDF. Is it a screenplay?' });
     }
-    res.json({ scenes, pageCount: data.numpages });
+    const { title, author } = extractTitleInfo(allLines);
+    res.json({
+      scenes,
+      pageCount: data.numpages,
+      suggestedName: title,
+      suggestedDescription: author ? `Written by ${author}` : null,
+    });
   } catch (err) {
     next(err);
   }

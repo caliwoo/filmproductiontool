@@ -182,4 +182,41 @@ function parseScriptLines(lines, { numPages } = {}) {
   return scenes;
 }
 
-module.exports = { parseScriptLines, classifyBodyLines };
+// Lines before the screenplay's first scene heading are its title page --
+// usually just the title, a "by AUTHOR" byline, and boilerplate (draft
+// status, copyright, contact info) with no further structure to lean on.
+// Used to prefill a new project's name/description when it's created
+// directly from an uploaded script, so the title page isn't just discarded.
+function extractTitleInfo(lines) {
+  const firstHeadingIdx = lines.findIndex(({ text }) => text && text.length <= 140 && HEADING_RE.test(text));
+  const titlePageLines = (firstHeadingIdx === -1 ? lines : lines.slice(0, firstHeadingIdx))
+    .map((l) => l.text.trim())
+    .filter(Boolean);
+
+  const BYLINE_RE = /^(?:written\s+)?by\s+(.+)$/i;
+  // Many title pages put "Written by" on its own line with the author's name
+  // on the next one, rather than both on a single line.
+  const BYLINE_LABEL_ONLY_RE = /^(?:written\s+)?by$/i;
+  const BOILERPLATE_RE = /^(final\s+draft|revised|draft|shooting\s+script|copyright|\(c\)|©|wga\s)/i;
+
+  let title = null;
+  let author = null;
+  titlePageLines.forEach((line, i) => {
+    const bylineMatch = line.match(BYLINE_RE);
+    if (bylineMatch) {
+      if (!author) author = bylineMatch[1].trim();
+      return;
+    }
+    if (BYLINE_LABEL_ONLY_RE.test(line)) {
+      if (!author && titlePageLines[i + 1]) author = titlePageLines[i + 1].trim();
+      return;
+    }
+    if (!title && !BOILERPLATE_RE.test(line) && line.length <= 80) {
+      title = line.replace(/^["'“]+|["'”]+$/g, '').trim();
+    }
+  });
+
+  return { title: title || null, author: author || null };
+}
+
+module.exports = { parseScriptLines, classifyBodyLines, extractTitleInfo };
