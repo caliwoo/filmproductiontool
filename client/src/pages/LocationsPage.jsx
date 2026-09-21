@@ -6,12 +6,18 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 export default function LocationsPage() {
   const { projectId } = useOutletContext();
   const [locations, setLocations] = useState([]);
+  const [scenes, setScenes] = useState([]);
   const [form, setForm] = useState({ name: '', address: '', notes: '' });
   const [error, setError] = useState('');
   const [locationToDelete, setLocationToDelete] = useState(null);
 
   function load() {
-    api.get(`/locations?projectId=${projectId}`).then(setLocations).catch((err) => setError(err.message));
+    Promise.all([api.get(`/locations?projectId=${projectId}`), api.get(`/scenes?projectId=${projectId}`)])
+      .then(([locationRows, sceneRows]) => {
+        setLocations(locationRows);
+        setScenes(sceneRows);
+      })
+      .catch((err) => setError(err.message));
   }
 
   useEffect(load, [projectId]);
@@ -43,6 +49,16 @@ export default function LocationsPage() {
     }
   }
 
+  // Scenes already come back in script order (order_index, id), so grouping
+  // preserves that order rather than sorting scene_number as text.
+  const sceneNumbersByLocation = new Map();
+  scenes.forEach((s) => {
+    if (!s.location_id) return;
+    const list = sceneNumbersByLocation.get(s.location_id) || [];
+    list.push(s.scene_number);
+    sceneNumbersByLocation.set(s.location_id, list);
+  });
+
   return (
     <div>
       <div className="page-header">
@@ -57,6 +73,7 @@ export default function LocationsPage() {
               <th>Name</th>
               <th>Address</th>
               <th>Notes</th>
+              <th title="Scenes tagged with this location, in script order">Scenes</th>
               <th></th>
             </tr>
           </thead>
@@ -84,6 +101,9 @@ export default function LocationsPage() {
                     onBlur={(e) => e.target.value !== l.notes && updateLocation(l.id, 'notes', e.target.value)}
                   />
                 </td>
+                <td className="muted" style={{ fontSize: 13 }}>
+                  {(sceneNumbersByLocation.get(l.id) || []).join(', ') || '—'}
+                </td>
                 <td>
                   <button className="icon-btn" onClick={() => setLocationToDelete(l)} title="Delete">
                     ✕
@@ -93,7 +113,7 @@ export default function LocationsPage() {
             ))}
             {locations.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">
+                <td colSpan={5} className="muted">
                   No locations yet.
                 </td>
               </tr>
