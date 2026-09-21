@@ -13,6 +13,8 @@ export default function BreakdownPage() {
   const [error, setError] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [sceneToDelete, setSceneToDelete] = useState(null);
+  const [showBreakdownAll, setShowBreakdownAll] = useState(false);
+  const [breakdownAllProgress, setBreakdownAllProgress] = useState('');
 
   function load() {
     Promise.all([
@@ -47,6 +49,32 @@ export default function BreakdownPage() {
   }
 
   const totalPages = scenes.reduce((sum, s) => sum + Number(s.page_count || 0), 0);
+  const scenesNeedingBreakdown = scenes.filter((s) => !s.elements || s.elements.length === 0);
+
+  // Runs AI Select for every scene with no breakdown elements yet, committing
+  // whatever it suggests without a per-scene review step -- the point of a
+  // bulk action is not reviewing each one individually. Scenes with no
+  // usable text (AI Select returns an empty list for those) are simply
+  // skipped rather than erroring. Sequential rather than parallel so the
+  // progress message stays meaningful and the AI isn't hit with N
+  // simultaneous requests.
+  async function handleBreakdownAll() {
+    for (let i = 0; i < scenesNeedingBreakdown.length; i++) {
+      const scene = scenesNeedingBreakdown[i];
+      setBreakdownAllProgress(
+        `Scene ${i + 1} of ${scenesNeedingBreakdown.length}: ${scene.scene_number}. ${scene.heading || 'Untitled'}`
+      );
+      const { candidates } = await api.post(`/scenes/${scene.id}/ai-tag`, {});
+      if (candidates && candidates.length > 0) {
+        await api.post(`/scenes/${scene.id}/elements/bulk`, {
+          elements: candidates.map(({ category, value, quote }) => ({ category, value, quote })),
+        });
+      }
+    }
+    setBreakdownAllProgress('');
+    setShowBreakdownAll(false);
+    load();
+  }
 
   return (
     <div>
@@ -56,6 +84,18 @@ export default function BreakdownPage() {
           <span className="muted">
             {scenes.length} scenes &middot; {totalPages.toFixed(1)} pages
           </span>
+          <button
+            className="btn btn-secondary"
+            disabled={scenesNeedingBreakdown.length === 0}
+            title={
+              scenesNeedingBreakdown.length === 0
+                ? 'Every scene already has at least one breakdown element'
+                : `Run AI Select for ${scenesNeedingBreakdown.length} scene${scenesNeedingBreakdown.length === 1 ? '' : 's'} without a breakdown yet`
+            }
+            onClick={() => setShowBreakdownAll(true)}
+          >
+            Breakdown All Scenes
+          </button>
           <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
             Import Script (PDF)
           </button>
@@ -71,6 +111,19 @@ export default function BreakdownPage() {
             setShowImport(false);
             load();
           }}
+        />
+      )}
+
+      {showBreakdownAll && (
+        <ConfirmDialog
+          title="Breakdown all scenes?"
+          message={`This will run AI Select on every scene that doesn't have any breakdown elements yet (${scenesNeedingBreakdown.length} scene${scenesNeedingBreakdown.length === 1 ? '' : 's'}) and add whatever it suggests, without reviewing each one individually first. You can still edit or remove any element afterward.`}
+          confirmLabel="Breakdown All Scenes"
+          busyLabel="Breaking down..."
+          progressMessage={breakdownAllProgress}
+          danger={false}
+          onConfirm={handleBreakdownAll}
+          onCancel={() => setShowBreakdownAll(false)}
         />
       )}
 
