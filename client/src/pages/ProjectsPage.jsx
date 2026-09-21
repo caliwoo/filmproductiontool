@@ -12,6 +12,8 @@ export default function ProjectsPage() {
   const [error, setError] = useState('');
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [showImport, setShowImport] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingName, setEditingName] = useState('');
 
   function load() {
     api.get('/projects').then(setProjects).catch((err) => setError(err.message));
@@ -36,6 +38,23 @@ export default function ProjectsPage() {
     await api.del(`/projects/${projectToDelete.id}`);
     setProjectToDelete(null);
     load();
+  }
+
+  function startEditingProject(p) {
+    setEditingProjectId(p.id);
+    setEditingName(p.name);
+  }
+
+  async function saveProjectName(project) {
+    const trimmed = editingName.trim();
+    setEditingProjectId(null);
+    if (!trimmed || trimmed === project.name) return;
+    try {
+      const updated = await api.put(`/projects/${project.id}`, { name: trimmed });
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? updated : p)));
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
@@ -85,10 +104,40 @@ export default function ProjectsPage() {
               >
                 ✕
               </button>
-              <Link to={`/projects/${p.id}`} className="project-card-link">
-                <h3>{p.name}</h3>
-                <p>{p.description || 'No description'}</p>
-              </Link>
+              {editingProjectId === p.id ? (
+                <div className="project-card-link">
+                  <input
+                    className="project-card-name-input"
+                    autoFocus
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={() => saveProjectName(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.target.blur();
+                      if (e.key === 'Escape') setEditingProjectId(null);
+                    }}
+                  />
+                  <p>{p.description || 'No description'}</p>
+                </div>
+              ) : (
+                <Link to={`/projects/${p.id}`} className="project-card-link">
+                  <h3>
+                    {p.name}
+                    <button
+                      className="icon-btn project-card-edit-btn"
+                      title="Rename project"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        startEditingProject(p);
+                      }}
+                    >
+                      ✎
+                    </button>
+                  </h3>
+                  <p>{p.description || 'No description'}</p>
+                </Link>
+              )}
             </div>
           ))}
           {projects.length === 0 && <p className="empty-state">No projects yet. Create your first one above.</p>}
