@@ -8,7 +8,6 @@ export default function DayCard({
   dayNumber,
   dayIndex,
   assigned,
-  locations,
   allScenes,
   castNumberByName,
   onChange,
@@ -22,7 +21,6 @@ export default function DayCard({
   const [sceneToAdd, setSceneToAdd] = useState('');
   const [error, setError] = useState('');
 
-  const location = locations.find((l) => l.id === day.location_id);
   const assignedIds = new Set(assigned.map((s) => s.id));
   const available = allScenes.filter((s) => !assignedIds.has(s.id));
 
@@ -94,7 +92,6 @@ export default function DayCard({
             <h3>Day {dayNumber}</h3>
             <div className="day-meta">
               {day.shoot_date || 'No date set'} &middot; Call {day.general_call_time || '—'}
-              {location && <> &middot; {location.name}</>}
             </div>
           </div>
         </div>
@@ -121,17 +118,6 @@ export default function DayCard({
           defaultValue={day.general_call_time}
           onBlur={(e) => updateField('general_call_time', e.target.value)}
         />
-        <select
-          defaultValue={day.location_id || ''}
-          onChange={(e) => updateField('location_id', e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">No location</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
         <input
           placeholder="Weather"
           defaultValue={day.weather}

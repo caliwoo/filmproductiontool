@@ -9,7 +9,6 @@ export default function SchedulePage() {
   const { projectId } = useOutletContext();
   const [days, setDays] = useState([]);
   const [assignmentsByDay, setAssignmentsByDay] = useState({});
-  const [locations, setLocations] = useState([]);
   const [scenes, setScenes] = useState([]);
   const [castNumberByName, setCastNumberByName] = useState({});
   const [error, setError] = useState('');
@@ -24,13 +23,11 @@ export default function SchedulePage() {
   function load() {
     Promise.all([
       api.get(`/shoot-days?projectId=${projectId}`),
-      api.get(`/locations?projectId=${projectId}`),
       api.get(`/scenes?projectId=${projectId}`),
       api.get(`/contacts?projectId=${projectId}`),
     ])
-      .then(([dayRows, locationRows, sceneRows, contactRows]) => {
+      .then(([dayRows, sceneRows, contactRows]) => {
         setDays(dayRows);
-        setLocations(locationRows);
         setScenes(sceneRows);
 
         // Stripboard-style Cast ID#: a compact stand-in for the full name,
@@ -229,7 +226,6 @@ export default function SchedulePage() {
             day={day}
             dayNumber={index + 1}
             assigned={assignmentsByDay[day.id] || []}
-            locations={locations}
             allScenes={scenes}
             castNumberByName={castNumberByName}
             onChange={load}
