@@ -5,7 +5,7 @@ import PageLengthInput from './PageLengthInput.jsx';
 import ScreenplayView from './ScreenplayView.jsx';
 import { formatPageLength } from '../pageLength.js';
 
-const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
+const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
 export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [open, setOpen] = useState(false);

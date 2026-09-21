@@ -6,7 +6,7 @@
 //     cast together, so a lead's scenes fall on as few, closely-spaced
 //     days as possible (lead actors are usually paid whether they work
 //     that day or not, so gaps between their days are wasted money)
-//   - tackle higher-complexity scenes (stunts/sfx/vehicles/extras) earlier
+//   - tackle higher-complexity scenes (stunts/sfx/vfx/vehicles/extras) earlier
 //   - never mix DAY and NIGHT scenes in the same shoot day (turnarounds)
 //   - cap each day at a target page count, charging a page-equivalent
 //     "company move" penalty against that cap each time the location
@@ -20,7 +20,7 @@
 // (a company move is charged the same whether the two locations are next
 // door or across town) -- those need a human pass after generating this.
 
-const COMPLEXITY_WEIGHT = { stunts: 3, sfx: 3, vehicles: 2, extras: 2, animals: 2 };
+const COMPLEXITY_WEIGHT = { stunts: 3, sfx: 3, vfx: 3, vehicles: 2, extras: 2, animals: 2 };
 
 // Page-equivalent cost charged against a day's page cap each time the crew
 // changes location mid-day, so a multi-location day isn't packed as if the

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api.js';
 
-const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
+const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
 export default function AiTagDialog({ sceneId, onClose, onCommitted }) {
   const [loading, setLoading] = useState(true);

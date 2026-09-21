@@ -22,6 +22,7 @@ const CATEGORY_LABELS = {
   wardrobe: 'Wardrobe',
   vehicles: 'Vehicles',
   sfx: 'Special Effects',
+  vfx: 'Visual Effects',
   sound: 'Sound',
   makeup: 'Makeup / Hair',
   animals: 'Animals',
@@ -146,7 +147,8 @@ function generateBreakdownSheet(doc, { project, scene, location, elements }) {
   const grid = [
     ['cast', 'stunts', 'extras'],
     ['props', 'wardrobe', 'vehicles'],
-    ['sfx', 'sound', 'makeup'],
+    ['sfx', 'vfx', 'sound'],
+    ['makeup', 'animals', 'notes'],
   ];
 
   grid.forEach((row) => {
@@ -155,11 +157,6 @@ function generateBreakdownSheet(doc, { project, scene, location, elements }) {
     });
     y += rowH;
   });
-
-  // Final row: Animals (1 col) + Notes (spans remaining 2 cols)
-  elementBox(doc, MARGIN, y, col3, rowH, 'animals', elements);
-  elementBox(doc, MARGIN + col3, y, col3 * 2, rowH, 'notes', elements);
-  y += rowH;
 
   // --- Footer ---
   doc

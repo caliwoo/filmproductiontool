@@ -1,11 +1,11 @@
 const { client, MODEL } = require('./anthropicClient');
 
-const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'sound', 'makeup', 'animals', 'notes'];
+const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
 const TAG_TOOL = {
   name: 'tag_scene_elements',
   description:
-    'Record the breakdown elements (cast, stunts, background extras, props, wardrobe, vehicles, special effects, sound, hair/makeup, animals) that are explicitly present or clearly implied in the given scene.',
+    'Record the breakdown elements (cast, stunts, background extras, props, wardrobe, vehicles, practical/special effects, visual effects, sound, hair/makeup, animals) that are explicitly present or clearly implied in the given scene.',
   input_schema: {
     type: 'object',
     properties: {
@@ -40,8 +40,9 @@ const SYSTEM_PROMPT = `You are a script supervisor doing a breakdown pass on a s
 Given a scene heading and its text, list every distinct element a production would need to prepare: speaking or
 named characters (cast), physical stunts/falls/fights/car chases requiring a stunt performer (stunts), background/
 crowd performers (extras), physical props characters interact with (props), notable clothing/costume items
-(wardrobe), vehicles (vehicles), practical or visual effects (sfx), notable sounds/music cues (sound),
-hair/makeup/prosthetics needs (makeup), and animals (animals).
+(wardrobe), vehicles (vehicles), practical/mechanical effects achieved on set — squibs, breakaway glass, rain,
+fire, smoke (sfx), digital/CGI effects added in post — creature work, screen replacements, de-aging, wire removal
+(vfx), notable sounds/music cues (sound), hair/makeup/prosthetics needs (makeup), and animals (animals).
 Only tag what is explicitly present or unambiguously implied by the text — never invent items. Do not tag the
 scene heading's location, INT/EXT, or time of day as an element. Keep each value short, like a breakdown sheet
 entry (2-4 words), not a full sentence. Skip anything already listed under "Already tagged" for this scene. If
