@@ -41,6 +41,10 @@ export default function ImportProjectDialog({ onClose, onCreated }) {
     setScenes((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   }
 
+  function toggleAllScenes(include) {
+    setScenes((prev) => prev.map((s) => ({ ...s, include })));
+  }
+
   async function handleCreate() {
     const toImport = scenes.filter((s) => s.include);
     if (!name.trim() || toImport.length === 0) return;
@@ -107,7 +111,7 @@ export default function ImportProjectDialog({ onClose, onCreated }) {
                 creating the project &mdash; uncheck any that were misdetected. Page lengths are estimated from where
                 each scene falls in the PDF; adjust any that look off.
               </p>
-              <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} />
+              <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} onToggleAll={toggleAllScenes} />
             </>
           )}
         </div>

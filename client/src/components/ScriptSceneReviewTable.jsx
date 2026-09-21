@@ -1,11 +1,30 @@
+import { useEffect, useRef } from 'react';
 import PageLengthInput from './PageLengthInput.jsx';
 
-export default function ScriptSceneReviewTable({ scenes, onUpdateScene }) {
+export default function ScriptSceneReviewTable({ scenes, onUpdateScene, onToggleAll }) {
+  const selectAllRef = useRef(null);
+  const includedCount = scenes.filter((s) => s.include).length;
+  const allSelected = includedCount === scenes.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = includedCount > 0 && !allSelected;
+    }
+  }, [includedCount, allSelected]);
+
   return (
     <table>
       <thead>
         <tr>
-          <th></th>
+          <th>
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              checked={allSelected}
+              title={allSelected ? 'Deselect all scenes' : 'Select all scenes'}
+              onChange={(e) => onToggleAll(e.target.checked)}
+            />
+          </th>
           <th>#</th>
           <th>Type</th>
           <th>Time</th>

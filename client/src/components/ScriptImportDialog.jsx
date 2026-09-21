@@ -33,6 +33,10 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
     setScenes((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   }
 
+  function toggleAllScenes(include) {
+    setScenes((prev) => prev.map((s) => ({ ...s, include })));
+  }
+
   async function handleImport() {
     const toImport = scenes.filter((s) => s.include);
     if (toImport.length === 0) return;
@@ -82,7 +86,7 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
                 importing &mdash; uncheck any that were misdetected. Page lengths are estimated from where each scene
                 falls in the PDF; adjust any that look off.
               </p>
-              <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} />
+              <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} onToggleAll={toggleAllScenes} />
             </>
           )}
         </div>
