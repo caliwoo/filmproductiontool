@@ -46,6 +46,16 @@ const SHOT_TOOL = {
               type: 'string',
               description: 'Special gear, lighting alerts, or blocking directions the crew needs to know for this setup. Empty string if nothing special.',
             },
+            covers_start: {
+              type: ['integer', 'null'],
+              description:
+                "If the scene text below is given as a numbered list of lines: the 0-based index of the first line this shot's coverage begins at. null if the scene text was plain prose instead (no numbered lines given).",
+            },
+            covers_end: {
+              type: ['integer', 'null'],
+              description:
+                "If the scene text below is given as a numbered list of lines: the 0-based index of the last line this shot's coverage ends at (inclusive; equal to covers_start for a shot covering one line). null if the scene text was plain prose instead.",
+            },
           },
           required: [
             'subject',
@@ -57,6 +67,8 @@ const SHOT_TOOL = {
             'description',
             'equipment',
             'setup_notes',
+            'covers_start',
+            'covers_end',
           ],
           additionalProperties: false,
         },
@@ -86,7 +98,12 @@ only reach for those when the scene specifically calls for it. Keep the list rea
 schedule — usually 3 to 8 shots depending on scene complexity; do not over-shoot a simple scene or under-cover a
 complex one. Do not repeat shots already listed under "Already planned" for this scene. Order the shots the way
 they would be listed on a shot list (not necessarily shooting order). If the scene has no usable text, return an
-empty list rather than guessing.`;
+empty list rather than guessing.
+
+When the scene text is given as a numbered list of lines, set covers_start and covers_end on every shot to the
+inclusive range of line numbers that shot's coverage corresponds to (e.g. a master shot typically spans the whole
+scene; a close-up on one line of dialogue covers just that line). Set both to null if the scene text is plain prose
+instead.`;
 
 async function suggestShots(scene, existingShots) {
   if (!client) {
@@ -101,9 +118,15 @@ async function suggestShots(scene, existingShots) {
         .join('\n')
     : '(none yet)';
 
-  const sceneText = `SCENE ${scene.scene_number}. ${scene.int_ext} ${scene.heading} - ${scene.day_night}\n\n${
-    scene.synopsis && scene.synopsis.trim() ? scene.synopsis : '(no scene text captured — use the heading only)'
-  }\n\nAlready planned for this scene:\n${existingList}`;
+  const scriptLines = Array.isArray(scene.script_elements) ? scene.script_elements : null;
+  const numLines = scriptLines ? scriptLines.length : 0;
+  const body = scriptLines && numLines > 0
+    ? scriptLines.map((el, i) => `[${i}] (${el.type}) ${el.text}`).join('\n')
+    : scene.synopsis && scene.synopsis.trim()
+      ? scene.synopsis
+      : '(no scene text captured — use the heading only)';
+
+  const sceneText = `SCENE ${scene.scene_number}. ${scene.int_ext} ${scene.heading} - ${scene.day_night}\n\n${body}\n\nAlready planned for this scene:\n${existingList}`;
 
   const response = await client.messages.create({
     model: MODEL,
@@ -118,7 +141,25 @@ async function suggestShots(scene, existingShots) {
   const toolUse = response.content.find((b) => b.type === 'tool_use');
   const shots = (toolUse && toolUse.input && toolUse.input.shots) || [];
 
-  return shots.filter((s) => s && s.description && s.description.trim());
+  // Defensively re-validate the model's line indices against the actual
+  // script rather than trusting them outright: clamp to the real bounds and
+  // drop the range entirely if it comes back inverted or the scene had no
+  // numbered lines to index into in the first place.
+  return shots
+    .filter((s) => s && s.description && s.description.trim())
+    .map((s) => {
+      let covers_start = null;
+      let covers_end = null;
+      if (numLines > 0 && Number.isInteger(s.covers_start) && Number.isInteger(s.covers_end)) {
+        const start = Math.max(0, Math.min(s.covers_start, numLines - 1));
+        const end = Math.max(0, Math.min(s.covers_end, numLines - 1));
+        if (start <= end) {
+          covers_start = start;
+          covers_end = end;
+        }
+      }
+      return { ...s, covers_start, covers_end };
+    });
 }
 
 module.exports = { suggestShots, SIZES };

@@ -189,7 +189,7 @@ router.post('/:sceneId/ai-tag', async (req, res) => {
 // --- AI Suggest: propose a shot list for the scene via Claude ---
 
 router.post('/:sceneId/ai-shots', async (req, res) => {
-  const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId);
+  const scene = withElements(db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId));
   if (!scene) return res.status(404).json({ error: 'Scene not found' });
 
   const existing = db

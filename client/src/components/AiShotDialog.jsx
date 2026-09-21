@@ -105,6 +105,7 @@ export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
                       <th>Composition</th>
                       <th>Equipment</th>
                       <th>Setup Notes</th>
+                      <th>Lines</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -188,6 +189,13 @@ export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
                             value={c.setup_notes}
                             onChange={(e) => updateCandidate(i, 'setup_notes', e.target.value)}
                           />
+                        </td>
+                        <td className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                          {Number.isInteger(c.covers_start) && Number.isInteger(c.covers_end)
+                            ? c.covers_start === c.covers_end
+                              ? `#${c.covers_start}`
+                              : `#${c.covers_start}–${c.covers_end}`
+                            : '—'}
                         </td>
                       </tr>
                     ))}

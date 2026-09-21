@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '../api.js';
 import AiShotDialog from './AiShotDialog.jsx';
 
@@ -17,17 +17,10 @@ const EMPTY_FORM = {
   equipment: '',
 };
 
-export default function ShotList({ sceneId }) {
-  const [shots, setShots] = useState([]);
+export default function ShotList({ sceneId, shots, onChange: load }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [showAiShots, setShowAiShots] = useState(false);
-
-  function load() {
-    api.get(`/shots?sceneId=${sceneId}`).then(setShots).catch((err) => setError(err.message));
-  }
-
-  useEffect(load, [sceneId]);
 
   async function handleAdd(e) {
     e.preventDefault();

@@ -24,6 +24,8 @@ router.post('/', (req, res) => {
     setup_notes = '',
     description = '',
     equipment = '',
+    covers_start = null,
+    covers_end = null,
   } = req.body;
   if (!scene_id) return res.status(400).json({ error: 'scene_id is required' });
   if (!shot_number || !String(shot_number).trim()) return res.status(400).json({ error: 'shot_number is required' });
@@ -33,8 +35,8 @@ router.post('/', (req, res) => {
   const result = db
     .prepare(
       `INSERT INTO shots (scene_id, shot_number, size, angle, movement, subject, lens, spatial_composition,
-         setup_notes, description, equipment, order_index)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         setup_notes, description, equipment, covers_start, covers_end, order_index)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       scene_id,
@@ -48,6 +50,8 @@ router.post('/', (req, res) => {
       setup_notes,
       description,
       equipment,
+      covers_start,
+      covers_end,
       maxOrder + 1
     );
 
@@ -70,10 +74,13 @@ router.put('/:id', (req, res) => {
     equipment,
     status,
     order_index,
+    covers_start,
+    covers_end,
   } = req.body;
   db.prepare(
     `UPDATE shots SET shot_number = ?, size = ?, angle = ?, movement = ?, subject = ?, lens = ?,
-       spatial_composition = ?, setup_notes = ?, description = ?, equipment = ?, status = ?, order_index = ?
+       spatial_composition = ?, setup_notes = ?, description = ?, equipment = ?, status = ?, order_index = ?,
+       covers_start = ?, covers_end = ?
        WHERE id = ?`
   ).run(
     shot_number ?? existing.shot_number,
@@ -88,6 +95,8 @@ router.put('/:id', (req, res) => {
     equipment ?? existing.equipment,
     status ?? existing.status,
     order_index === undefined ? existing.order_index : order_index,
+    covers_start === undefined ? existing.covers_start : covers_start,
+    covers_end === undefined ? existing.covers_end : covers_end,
     req.params.id
   );
   res.json(db.prepare('SELECT * FROM shots WHERE id = ?').get(req.params.id));
@@ -109,8 +118,8 @@ router.post('/bulk', (req, res) => {
 
   const insert = db.prepare(
     `INSERT INTO shots (scene_id, shot_number, size, angle, movement, subject, lens, spatial_composition,
-       setup_notes, description, equipment, order_index)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       setup_notes, description, equipment, covers_start, covers_end, order_index)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertedIds = [];
   const tx = db.transaction((rows) => {
@@ -129,6 +138,8 @@ router.post('/bulk', (req, res) => {
           s.setup_notes || '',
           String(s.description).trim(),
           s.equipment || '',
+          Number.isInteger(s.covers_start) ? s.covers_start : null,
+          Number.isInteger(s.covers_end) ? s.covers_end : null,
           maxOrder + 1 + i
         ).lastInsertRowid
       );

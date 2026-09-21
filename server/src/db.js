@@ -118,6 +118,18 @@ const shotColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.na
   }
 });
 
+const shotCoverageColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.name);
+['covers_start', 'covers_end'].forEach((col) => {
+  if (!shotCoverageColumns.includes(col)) {
+    // 0-based indices into the scene's script_elements array marking which
+    // lines of the screenplay this shot's coverage spans (inclusive), set
+    // when a shot comes from AI Suggest Shots against a scene with a
+    // formatted script. NULL for manually-added shots, or any shot whose
+    // scene has no script_elements to index into.
+    db.exec(`ALTER TABLE shots ADD COLUMN ${col} INTEGER`);
+  }
+});
+
 const sceneColumns = db.prepare('PRAGMA table_info(scenes)').all().map((c) => c.name);
 if (!sceneColumns.includes('script_elements')) {
   // JSON array of {type, text} screenplay elements (action/character/parenthetical/
