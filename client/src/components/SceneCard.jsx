@@ -4,6 +4,7 @@ import AiTagDialog from './AiTagDialog.jsx';
 import PageLengthInput from './PageLengthInput.jsx';
 import ScreenplayView from './ScreenplayView.jsx';
 import { formatPageLength } from '../pageLength.js';
+import { locationLabel } from '../locationLabel.js';
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
@@ -70,12 +71,12 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           <span className="scene-heading-text">
             {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
           </span>
-          {location && <span className="scene-slug">{location.name}</span>}
+          {location && <span className="scene-slug">{locationLabel(location)}</span>}
         </div>
         <div className="flex-row">
           <span
             className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
-            title={hasLocation ? `Location: ${location ? location.name : 'selected'}` : 'No location selected yet'}
+            title={hasLocation ? `Location: ${location ? locationLabel(location) : 'selected'}` : 'No location selected yet'}
           >
             Location
           </span>
@@ -153,7 +154,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="">No location</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.name}
+                  {locationLabel(l) || 'Unnamed location'}
                 </option>
               ))}
             </select>

@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 const { backfillCastContacts, migrateCastNameToRole } = require('./castSync');
-const { backfillSceneLocations } = require('./locationSync');
+const { backfillSceneLocations, migrateHeadingNamesToSceneHeading } = require('./locationSync');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -107,6 +107,16 @@ CREATE TABLE IF NOT EXISTS shoot_day_calls (
 );
 `);
 
+const locationColumns = db.prepare('PRAGMA table_info(locations)').all().map((c) => c.name);
+if (!locationColumns.includes('scene_heading')) {
+  // The location text as written in a scene's heading (e.g. "APARTMENT" from
+  // "APARTMENT - BEDROOM"), auto-filled on script import. Kept separate from
+  // `name` so a scripted set description is never mistaken for -- or
+  // overwrites -- the location's actual real-world name/address, which the
+  // user fills into `name` themselves.
+  db.exec("ALTER TABLE locations ADD COLUMN scene_heading TEXT DEFAULT ''");
+}
+
 const contactColumns = db.prepare('PRAGMA table_info(contacts)').all().map((c) => c.name);
 if (!contactColumns.includes('is_lead')) {
   db.exec('ALTER TABLE contacts ADD COLUMN is_lead INTEGER NOT NULL DEFAULT 0');
@@ -167,6 +177,7 @@ if (!sceneColumns.includes('script_elements')) {
 
 migrateCastNameToRole(db);
 backfillCastContacts(db);
+migrateHeadingNamesToSceneHeading(db);
 backfillSceneLocations(db);
 
 module.exports = db;

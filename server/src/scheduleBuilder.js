@@ -20,6 +20,8 @@
 // (a company move is charged the same whether the two locations are next
 // door or across town) -- those need a human pass after generating this.
 
+const { locationLabel } = require('./locationSync');
+
 const COMPLEXITY_WEIGHT = { stunts: 3, sfx: 3, vfx: 3, vehicles: 2, extras: 2, animals: 2 };
 
 // Page-equivalent cost charged against a day's page cap each time the crew
@@ -281,7 +283,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
         day_night: scene.day_night,
         page_count: scene.page_count,
         location_id: scene.location_id,
-        location_name: scene.location_id ? locationById.get(scene.location_id)?.name || null : null,
+        location_name: scene.location_id ? locationLabel(locationById.get(scene.location_id)) : null,
         scheduled_time,
         estimated_minutes,
       };
@@ -292,7 +294,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
       day_night: day.dnGroup,
       general_call_time: generalCallTime,
       location_id: locationId,
-      location_name: locationId ? locationById.get(locationId)?.name || null : null,
+      location_name: locationId ? locationLabel(locationById.get(locationId)) : null,
       total_pages: Math.round(day.totalPages * 8) / 8,
       lead_cast: [...leadCastToday].sort(),
       scenes: sceneEntries,

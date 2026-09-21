@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import { locationLabel } from '../locationLabel.js';
 
 export default function LocationsPage() {
   const { projectId } = useOutletContext();
@@ -70,6 +71,9 @@ export default function LocationsPage() {
         <table>
           <thead>
             <tr>
+              <th title="The set description auto-detected from the script's scene heading, e.g. &quot;APARTMENT&quot; -- not this location's real name">
+                Scene Heading
+              </th>
               <th>Name</th>
               <th>Address</th>
               <th>Notes</th>
@@ -80,10 +84,11 @@ export default function LocationsPage() {
           <tbody>
             {locations.map((l) => (
               <tr key={l.id}>
+                <td className="muted">{l.scene_heading || '—'}</td>
                 <td>
                   <input
                     defaultValue={l.name}
-                    placeholder="Name"
+                    placeholder="Real location name"
                     onBlur={(e) => e.target.value !== l.name && updateLocation(l.id, 'name', e.target.value)}
                   />
                 </td>
@@ -113,7 +118,7 @@ export default function LocationsPage() {
             ))}
             {locations.length === 0 && (
               <tr>
-                <td colSpan={5} className="muted">
+                <td colSpan={6} className="muted">
                   No locations yet.
                 </td>
               </tr>
@@ -146,7 +151,7 @@ export default function LocationsPage() {
       {locationToDelete && (
         <ConfirmDialog
           title="Delete location?"
-          message={`This will permanently remove "${locationToDelete.name}" from this project. Any scenes or shoot days using it will be left with no location set.`}
+          message={`This will permanently remove "${locationLabel(locationToDelete)}" from this project. Any scenes or shoot days using it will be left with no location set.`}
           confirmLabel="Delete Location"
           onConfirm={confirmDelete}
           onCancel={() => setLocationToDelete(null)}

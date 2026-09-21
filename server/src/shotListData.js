@@ -1,4 +1,5 @@
 const db = require('./db');
+const { locationLabel } = require('./locationSync');
 
 /**
  * Flattens every shot across every scene in a project into one list, joined
@@ -24,7 +25,7 @@ function getShotListRows(projectId) {
         scene_number: scene.scene_number,
         scene_heading: scene.heading,
         day_night: scene.day_night,
-        location: location ? location.name : null,
+        location: locationLabel(location),
         shot_id: shot.id,
         shot_number: shot.shot_number,
         description: shot.description,

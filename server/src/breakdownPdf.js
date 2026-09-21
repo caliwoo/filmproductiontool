@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const { locationLabel } = require('./locationSync');
 
 // AD stripboards track script length in eighths of a page (e.g. "2 3/8"),
 // not decimals.
@@ -130,7 +131,7 @@ function generateBreakdownSheet(doc, { project, scene, location, elements }) {
   y += row1H;
   labeledCell(doc, MARGIN, y, colA + colB, row2H, 'Description', scene.synopsis, { valueSize: 9 });
   const noLocationMessage = 'Select a location for this scene in Script Breakdown to fill this in';
-  labeledCell(doc, MARGIN + colA + colB, y, colC, row2H, 'Location', location ? location.name : null, {
+  labeledCell(doc, MARGIN + colA + colB, y, colC, row2H, 'Location', locationLabel(location), {
     valueSize: 9,
     emptyMessage: noLocationMessage,
   });

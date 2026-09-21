@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useOutletContext, useParams, Link } from 'react-router-dom';
 import api from '../api.js';
+import { locationLabel } from '../locationLabel.js';
 
 export default function CallSheetPage() {
   const { projectId } = useOutletContext();
@@ -74,7 +75,7 @@ export default function CallSheetPage() {
         <div className="call-sheet-grid">
           <div className="field">
             <label>Location</label>
-            {location ? location.name : 'TBD'}
+            {location ? locationLabel(location) : 'TBD'}
           </div>
           <div className="field">
             <label>Address</label>
@@ -112,7 +113,7 @@ export default function CallSheetPage() {
                   {locationChanged && s.location && (
                     <tr className="call-sheet-location-change">
                       <td colSpan={5}>
-                        <strong>Location:</strong> {s.location.name}
+                        <strong>Location:</strong> {locationLabel(s.location)}
                         {s.location.address && (
                           <>
                             {' '}
@@ -129,7 +130,7 @@ export default function CallSheetPage() {
                     </td>
                     <td>{s.heading}</td>
                     <td>{s.elements.filter((e) => e.category === 'cast').map((e) => e.value).join(', ') || '—'}</td>
-                    <td>{s.location ? s.location.name : '—'}</td>
+                    <td>{s.location ? locationLabel(s.location) : '—'}</td>
                   </tr>
                 </Fragment>
               );

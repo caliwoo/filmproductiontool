@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { locationLabel } = require('../locationSync');
 
 const router = express.Router();
 
@@ -92,12 +93,14 @@ router.get('/:id/scenes', (req, res) => {
     .all(req.params.id);
 
   const enriched = rows.map((scene) => {
-    const location = scene.location_id ? db.prepare('SELECT name FROM locations WHERE id = ?').get(scene.location_id) : null;
+    const location = scene.location_id
+      ? db.prepare('SELECT name, scene_heading FROM locations WHERE id = ?').get(scene.location_id)
+      : null;
     const cast = db
       .prepare("SELECT value FROM scene_elements WHERE scene_id = ? AND category = 'cast'")
       .all(scene.id)
       .map((r) => r.value);
-    return { ...scene, location_name: location ? location.name : null, cast };
+    return { ...scene, location_name: locationLabel(location), cast };
   });
 
   res.json(enriched);
