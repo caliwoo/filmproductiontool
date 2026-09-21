@@ -8,8 +8,9 @@ const TYPE_CLASS = {
 };
 
 // Distinct from the breakdown-element highlight palette (which colors text
-// inline) so a shot marker badge is never mistaken for a tagged cast/prop
-// highlight -- shot coverage is a badge before the line, not a text color.
+// inline) so a shot cut-mark is never mistaken for a tagged cast/prop
+// highlight -- a cut-mark is a circled number breaking the text flow, not a
+// text color.
 const SHOT_COLORS = [
   '#2563eb',
   '#dc2626',
@@ -74,42 +75,61 @@ function highlightText(text, tags) {
   return parts;
 }
 
+// Breaks a line's text at each marker's character offset and inserts a
+// circled shot-number cut-mark there -- like an AD marking up a printed
+// script by hand to show where a new setup's coverage begins. Markers on
+// the same line are sorted so multiple cuts within one line appear in the
+// right order; breakdown-tag highlighting still applies within each
+// resulting segment.
+function renderLine(text, tags, markers) {
+  if (!markers.length) return highlightText(text, tags);
+
+  const parts = [];
+  let cursor = 0;
+  markers.forEach((m) => {
+    const offset = Math.max(0, Math.min(m.offset, text.length));
+    if (offset > cursor) parts.push(<span key={`t${parts.length}`}>{highlightText(text.slice(cursor, offset), tags)}</span>);
+    parts.push(
+      <span
+        key={`m${m.id}`}
+        className="shot-cut-mark"
+        style={{ borderColor: m.color, color: m.color }}
+        title={`Shot ${m.shot_number}${m.description ? `: ${m.description}` : ''}`}
+      >
+        {m.shot_number}
+      </span>
+    );
+    cursor = offset;
+  });
+  if (cursor < text.length) parts.push(<span key={`t${parts.length}`}>{highlightText(text.slice(cursor), tags)}</span>);
+  return parts;
+}
+
 export default function ScreenplayView({ elements, tags, shots }) {
-  // Only shots the AI (or an edit) placed on a specific line range can be
-  // marked -- manually-added shots have no coverage and just don't appear
-  // here, same as before this feature existed.
-  const coveredShots = (shots || []).filter(
-    (s) => Number.isInteger(s.covers_start) && Number.isInteger(s.covers_end)
-  );
-  const colorForShot = (id) => SHOT_COLORS[coveredShots.findIndex((s) => s.id === id) % SHOT_COLORS.length];
-  const shotsForLine = (index) => coveredShots.filter((s) => index >= s.covers_start && index <= s.covers_end);
+  // Only a shot the AI (or an edit) placed at a specific point in the text
+  // can be marked -- manually-added shots have no marker and just don't
+  // appear here, same as before this feature existed.
+  const markedShots = (shots || []).filter((s) => Number.isInteger(s.marker_line) && Number.isInteger(s.marker_offset));
+  const colorForShot = (id) => SHOT_COLORS[markedShots.findIndex((s) => s.id === id) % SHOT_COLORS.length];
+  const markersForLine = (index) =>
+    markedShots
+      .filter((s) => s.marker_line === index)
+      .map((s) => ({ id: s.id, offset: s.marker_offset, shot_number: s.shot_number, description: s.description, color: colorForShot(s.id) }))
+      .sort((a, b) => a.offset - b.offset);
 
   return (
     <div className="screenplay-view">
-      {elements.map((el, i) => {
-        const lineShots = shotsForLine(i);
-        return (
-          <p key={i} className={TYPE_CLASS[el.type] || 'action'}>
-            {lineShots.map((s) => (
-              <span
-                key={s.id}
-                className="shot-marker"
-                style={{ background: colorForShot(s.id) }}
-                title={`Shot ${s.shot_number}${s.description ? `: ${s.description}` : ''}`}
-              >
-                {s.shot_number}
-              </span>
-            ))}
-            {highlightText(el.text, tags)}
-          </p>
-        );
-      })}
+      {elements.map((el, i) => (
+        <p key={i} className={TYPE_CLASS[el.type] || 'action'}>
+          {renderLine(el.text, tags, markersForLine(i))}
+        </p>
+      ))}
 
-      {coveredShots.length > 0 && (
+      {markedShots.length > 0 && (
         <div className="shot-marker-legend">
-          {coveredShots.map((s) => (
+          {markedShots.map((s) => (
             <span key={s.id} className="shot-marker-legend-item">
-              <span className="shot-marker" style={{ background: colorForShot(s.id) }}>
+              <span className="shot-cut-mark shot-cut-mark-legend" style={{ borderColor: colorForShot(s.id), color: colorForShot(s.id) }}>
                 {s.shot_number}
               </span>
               {s.description || `${s.size} ${s.angle}`.trim() || 'Shot'}

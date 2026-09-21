@@ -778,24 +778,28 @@ tr.dragging {
   margin: 15px 1in 15px 1.5in;
 }
 
-/* Badge marking where an AI-suggested shot's coverage falls in the
-   screenplay text (SceneShotPanel, Shot List > By Scene). Sits before the
-   line's own text, inside its normal margin, so multiple shots covering the
-   same line stack left to right without disturbing that line's alignment. */
-.shot-marker {
+/* Cut-mark: a circled shot number inserted exactly where that shot's
+   coverage begins in the running screenplay text (SceneShotPanel, Shot
+   List > By Scene) -- mimicking how an AD marks up a printed script by
+   hand, circling a word and numbering the setup that starts there. It
+   breaks the text flow inline (mid-sentence when that's where coverage
+   starts) rather than sitting only at a line's start. */
+.shot-cut-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-right: 6px;
-  border-radius: 999px;
-  color: #fff;
+  width: 20px;
+  height: 20px;
+  margin: 0 2px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
   vertical-align: middle;
+  transform: translateY(-1px);
 }
 
 .shot-marker-legend {
@@ -813,4 +817,9 @@ tr.dragging {
 .shot-marker-legend-item {
   display: flex;
   align-items: center;
+}
+
+.shot-cut-mark-legend {
+  margin-right: 8px;
+  margin-left: 0;
 }

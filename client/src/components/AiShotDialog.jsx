@@ -191,11 +191,7 @@ export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
                           />
                         </td>
                         <td className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                          {Number.isInteger(c.covers_start) && Number.isInteger(c.covers_end)
-                            ? c.covers_start === c.covers_end
-                              ? `#${c.covers_start}`
-                              : `#${c.covers_start}–${c.covers_end}`
-                            : '—'}
+                          {Number.isInteger(c.marker_line) ? `line ${c.marker_line}` : '—'}
                         </td>
                       </tr>
                     ))}

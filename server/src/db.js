@@ -118,14 +118,27 @@ const shotColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.na
   }
 });
 
+// Replaced by marker_line/marker_offset below (a single cut-point per shot
+// reads better against running screenplay text than a highlighted line
+// range did -- see the marker_line/marker_offset comment).
 const shotCoverageColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.name);
 ['covers_start', 'covers_end'].forEach((col) => {
-  if (!shotCoverageColumns.includes(col)) {
-    // 0-based indices into the scene's script_elements array marking which
-    // lines of the screenplay this shot's coverage spans (inclusive), set
+  if (shotCoverageColumns.includes(col)) {
+    db.exec(`ALTER TABLE shots DROP COLUMN ${col}`);
+  }
+});
+
+const shotMarkerColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) => c.name);
+['marker_line', 'marker_offset'].forEach((col) => {
+  if (!shotMarkerColumns.includes(col)) {
+    // Where this shot's coverage begins in the scene's screenplay text, set
     // when a shot comes from AI Suggest Shots against a scene with a
-    // formatted script. NULL for manually-added shots, or any shot whose
-    // scene has no script_elements to index into.
+    // formatted script: marker_line is a 0-based index into the scene's
+    // script_elements array, marker_offset a character offset into that
+    // line's own text -- together a single cut point, rendered as an inline
+    // marker in the running text (mid-line, not just at a line's start).
+    // NULL for manually-added shots, or any shot whose scene has no
+    // script_elements to index into.
     db.exec(`ALTER TABLE shots ADD COLUMN ${col} INTEGER`);
   }
 });

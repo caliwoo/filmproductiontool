@@ -46,15 +46,15 @@ const SHOT_TOOL = {
               type: 'string',
               description: 'Special gear, lighting alerts, or blocking directions the crew needs to know for this setup. Empty string if nothing special.',
             },
-            covers_start: {
+            marker_line: {
               type: ['integer', 'null'],
               description:
-                "If the scene text below is given as a numbered list of lines: the 0-based index of the first line this shot's coverage begins at. null if the scene text was plain prose instead (no numbered lines given).",
+                "If the scene text below is given as a numbered list of lines: the 0-based index of the line this shot's coverage begins at. null if the scene text was plain prose instead (no numbered lines given).",
             },
-            covers_end: {
-              type: ['integer', 'null'],
+            marker_quote: {
+              type: ['string', 'null'],
               description:
-                "If the scene text below is given as a numbered list of lines: the 0-based index of the last line this shot's coverage ends at (inclusive; equal to covers_start for a shot covering one line). null if the scene text was plain prose instead.",
+                "If marker_line is set: a short run of 2-6 words copied VERBATIM (exact characters, same case and punctuation) from that line's own text, starting exactly where this shot's coverage begins -- e.g. if the shot picks up mid-sentence, quote from that exact word, not the start of the line. Empty string if the shot's coverage begins at the very start of the line. null if marker_line is null.",
             },
           },
           required: [
@@ -67,8 +67,8 @@ const SHOT_TOOL = {
             'description',
             'equipment',
             'setup_notes',
-            'covers_start',
-            'covers_end',
+            'marker_line',
+            'marker_quote',
           ],
           additionalProperties: false,
         },
@@ -100,9 +100,11 @@ complex one. Do not repeat shots already listed under "Already planned" for this
 they would be listed on a shot list (not necessarily shooting order). If the scene has no usable text, return an
 empty list rather than guessing.
 
-When the scene text is given as a numbered list of lines, set covers_start and covers_end on every shot to the
-inclusive range of line numbers that shot's coverage corresponds to (e.g. a master shot typically spans the whole
-scene; a close-up on one line of dialogue covers just that line). Set both to null if the scene text is plain prose
+When the scene text is given as a numbered list of lines, set marker_line and marker_quote on every shot to mark the
+exact point in the text where that shot's coverage begins -- like an AD circling a word on a printed script and
+drawing a line to mark a new setup. A master shot typically starts at line 0; a shot that picks up mid-sentence
+(e.g. a insert on a specific action, or a close-up starting partway through a line of action or dialogue) should
+quote from that exact word, not just the start of its line. Set both to null if the scene text is plain prose
 instead.`;
 
 async function suggestShots(scene, existingShots) {
@@ -141,24 +143,26 @@ async function suggestShots(scene, existingShots) {
   const toolUse = response.content.find((b) => b.type === 'tool_use');
   const shots = (toolUse && toolUse.input && toolUse.input.shots) || [];
 
-  // Defensively re-validate the model's line indices against the actual
-  // script rather than trusting them outright: clamp to the real bounds and
-  // drop the range entirely if it comes back inverted or the scene had no
-  // numbered lines to index into in the first place.
+  // Defensively re-resolve the model's marker against the actual script
+  // rather than trusting its output outright: clamp the line index to
+  // real bounds, then locate the quoted text within that specific line's
+  // own text (case-insensitive) to get an exact character offset. A quote
+  // that doesn't actually appear on its claimed line (a paraphrase instead
+  // of a verbatim copy) falls back to the start of that line rather than
+  // silently dropping the marker.
   return shots
     .filter((s) => s && s.description && s.description.trim())
     .map((s) => {
-      let covers_start = null;
-      let covers_end = null;
-      if (numLines > 0 && Number.isInteger(s.covers_start) && Number.isInteger(s.covers_end)) {
-        const start = Math.max(0, Math.min(s.covers_start, numLines - 1));
-        const end = Math.max(0, Math.min(s.covers_end, numLines - 1));
-        if (start <= end) {
-          covers_start = start;
-          covers_end = end;
-        }
+      let marker_line = null;
+      let marker_offset = null;
+      if (numLines > 0 && Number.isInteger(s.marker_line)) {
+        marker_line = Math.max(0, Math.min(s.marker_line, numLines - 1));
+        const lineText = scriptLines[marker_line].text;
+        const quote = typeof s.marker_quote === 'string' ? s.marker_quote.trim() : '';
+        const found = quote ? lineText.toLowerCase().indexOf(quote.toLowerCase()) : -1;
+        marker_offset = found >= 0 ? found : 0;
       }
-      return { ...s, covers_start, covers_end };
+      return { ...s, marker_line, marker_offset };
     });
 }
 
