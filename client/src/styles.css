@@ -769,9 +769,7 @@ tr.dragging {
 }
 
 .dialogue {
-  /* Left margin only, tripled from the previous 2in -- keeps the right
-     margin as-is so the dialogue column doesn't also narrow. */
-  margin: 0 2in 15px 6in;
+  margin: 0 2in 15px 4in;
 }
 
 .transition {
