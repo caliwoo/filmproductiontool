@@ -34,6 +34,15 @@ export default function LocationsPage() {
     load();
   }
 
+  async function updateLocation(id, field, value) {
+    try {
+      await api.put(`/locations/${id}`, { [field]: value });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -54,9 +63,27 @@ export default function LocationsPage() {
           <tbody>
             {locations.map((l) => (
               <tr key={l.id}>
-                <td>{l.name}</td>
-                <td>{l.address}</td>
-                <td>{l.notes}</td>
+                <td>
+                  <input
+                    defaultValue={l.name}
+                    placeholder="Name"
+                    onBlur={(e) => e.target.value !== l.name && updateLocation(l.id, 'name', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    defaultValue={l.address}
+                    placeholder="Address"
+                    onBlur={(e) => e.target.value !== l.address && updateLocation(l.id, 'address', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    defaultValue={l.notes}
+                    placeholder="Notes"
+                    onBlur={(e) => e.target.value !== l.notes && updateLocation(l.id, 'notes', e.target.value)}
+                  />
+                </td>
                 <td>
                   <button className="icon-btn" onClick={() => setLocationToDelete(l)} title="Delete">
                     ✕
