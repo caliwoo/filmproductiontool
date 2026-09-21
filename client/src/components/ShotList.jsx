@@ -64,7 +64,7 @@ export default function ShotList({ sceneId }) {
           onClick={() => setShowAiShots(true)}
           style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 'normal', fontSize: 13 }}
         >
-          ✨ AI Suggest Shots
+          ✨ Create Shot List (AI)
         </button>
       </div>
 

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import api from '../api.js';
-import ShotList from './ShotList.jsx';
 import AiTagDialog from './AiTagDialog.jsx';
 import PageLengthInput from './PageLengthInput.jsx';
 import ScreenplayView from './ScreenplayView.jsx';
@@ -271,8 +270,6 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               Tag Element
             </button>
           </form>
-
-          <ShotList sceneId={scene.id} />
         </div>
       )}
     </div>
