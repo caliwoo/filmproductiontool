@@ -47,6 +47,12 @@ scene heading's location, INT/EXT, or time of day as an element. Keep each value
 entry (2-4 words), not a full sentence. Skip anything already listed under "Already tagged" for this scene. If
 nothing qualifies for a category, omit it. If the scene has no usable text, return an empty list rather than guessing.
 
+Tag someone under cast only if they're physically present and performing in the scene. Do not tag a character
+who is merely referenced indirectly — mentioned in dialogue or narration, seen in a photo, appearing in a text
+message thread on a phone screen, or heard on the other end of a phone call — without actually being there in
+person; no actor is needed on set for that. In those cases, tag the physical object that carries the reference
+instead, as a prop (e.g. a photo someone is looking at, not the person pictured in it).
+
 For every element, also set quote to a short verbatim excerpt from the scene text marking where it actually appears
 or is described, so the element can be highlighted at its real position in the text later — see the quote field's
 own description for exactly what counts as verbatim.`;
