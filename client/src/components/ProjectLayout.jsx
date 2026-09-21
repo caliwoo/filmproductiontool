@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useParams, Link } from 'react-router-dom';
 import api from '../api.js';
 
@@ -6,6 +6,9 @@ export default function ProjectLayout() {
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const nameInputRef = useRef(null);
 
   useEffect(() => {
     api
@@ -14,13 +17,55 @@ export default function ProjectLayout() {
       .catch((err) => setError(err.message));
   }, [projectId]);
 
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.focus();
+  }, [editingName]);
+
+  function startEditingName() {
+    setNameInput(project.name);
+    setEditingName(true);
+  }
+
+  async function saveName() {
+    const trimmed = nameInput.trim();
+    setEditingName(false);
+    if (!trimmed || trimmed === project.name) return;
+    try {
+      const updated = await api.put(`/projects/${projectId}`, { name: trimmed });
+      setProject(updated);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
           Reelboard
         </Link>
-        <div className="project-name">{project ? project.name : '...'}</div>
+        {editingName ? (
+          <input
+            ref={nameInputRef}
+            className="project-name-input"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onBlur={saveName}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.target.blur();
+              if (e.key === 'Escape') setEditingName(false);
+            }}
+          />
+        ) : (
+          <div className="project-name">
+            {project ? project.name : '...'}
+            {project && (
+              <button className="icon-btn project-name-edit-btn" title="Rename project" onClick={startEditingName}>
+                ✎
+              </button>
+            )}
+          </div>
+        )}
         <nav className="nav">
           <NavLink to="breakdown" className={({ isActive }) => (isActive ? 'active' : '')}>
             Script Breakdown

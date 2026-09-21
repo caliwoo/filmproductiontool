@@ -66,11 +66,34 @@ textarea {
 }
 
 .project-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: #8a90a2;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid #2a2e3a;
+}
+
+.project-name-edit-btn {
+  font-size: 12px;
+  padding: 0;
+  opacity: 0.7;
+}
+
+.project-name .project-name-edit-btn:hover {
+  opacity: 1;
+  color: #fff;
+}
+
+.project-name-input {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 24px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
 }
 
 .nav {
