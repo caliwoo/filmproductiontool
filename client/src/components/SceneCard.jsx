@@ -91,10 +91,16 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? 'Shot' : 'Not shot'}</span>
           <a
             className="btn btn-secondary"
-            style={{ fontSize: 12, padding: '5px 10px' }}
-            href={`/api/scenes/${scene.id}/breakdown-pdf`}
+            style={{
+              fontSize: 12,
+              padding: '5px 10px',
+              opacity: hasBreakdown ? 1 : 0.6,
+              pointerEvents: hasBreakdown ? 'auto' : 'none',
+            }}
+            href={hasBreakdown ? `/api/scenes/${scene.id}/breakdown-pdf` : undefined}
             onClick={(e) => e.stopPropagation()}
-            title="Download PDF breakdown sheet"
+            title={hasBreakdown ? 'Download PDF breakdown sheet' : 'Tag at least one breakdown element first'}
+            aria-disabled={!hasBreakdown}
           >
             PDF Breakdown
           </a>
