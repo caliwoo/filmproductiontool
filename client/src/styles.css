@@ -447,6 +447,28 @@ mark.highlight {
 .badge.not_shot { background: #f3f4f6; color: #6b7280; }
 .badge.shot { background: #dcfce7; color: #166534; }
 
+/* Readiness indicators on a scene's collapsed header row -- whether it has a
+   location and at least one tagged breakdown element, so that's visible
+   without opening every scene card. */
+.readiness-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.readiness-badge.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.readiness-badge.pending {
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+}
+
 .section-label {
   font-size: 12px;
   text-transform: uppercase;

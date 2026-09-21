@@ -18,6 +18,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [editingSynopsis, setEditingSynopsis] = useState(false);
 
   const hasFormattedScript = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
+  const hasLocation = Boolean(scene.location_id);
+  const hasBreakdown = Array.isArray(scene.elements) && scene.elements.length > 0;
 
   const location = locations.find((l) => l.id === scene.location_id);
 
@@ -71,6 +73,18 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           {location && <span className="scene-slug">{location.name}</span>}
         </div>
         <div className="flex-row">
+          <span
+            className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
+            title={hasLocation ? `Location: ${location ? location.name : 'selected'}` : 'No location selected yet'}
+          >
+            Location
+          </span>
+          <span
+            className={`readiness-badge ${hasBreakdown ? 'ready' : 'pending'}`}
+            title={hasBreakdown ? `${scene.elements.length} breakdown element${scene.elements.length === 1 ? '' : 's'} tagged` : 'No breakdown elements tagged yet'}
+          >
+            Breakdown
+          </span>
           <span className="muted" style={{ fontSize: 12 }} title="Script length">
             {formatPageLength(scene.page_count)} pgs
           </span>
