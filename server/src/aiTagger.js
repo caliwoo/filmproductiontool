@@ -19,8 +19,13 @@ const TAG_TOOL = {
               type: 'string',
               description: 'Short breakdown-sheet name for the element, e.g. "Coffee Mug" or "Revolver".',
             },
+            quote: {
+              type: 'string',
+              description:
+                'A short run of 2-6 words copied VERBATIM (exact characters, same case and punctuation) from the scene text above where this element actually appears or is described -- e.g. for a value of "Colorful Butterfly", a quote like "the butterfly" or "tree with the butterfly" pulled from the actual text. Empty string only if this element is a mood/tone/style note with no literal textual anchor (e.g. "Ominous tonal shift").',
+            },
           },
-          required: ['category', 'value'],
+          required: ['category', 'value', 'quote'],
           additionalProperties: false,
         },
       },
@@ -40,7 +45,11 @@ hair/makeup/prosthetics needs (makeup), and animals (animals).
 Only tag what is explicitly present or unambiguously implied by the text — never invent items. Do not tag the
 scene heading's location, INT/EXT, or time of day as an element. Keep each value short, like a breakdown sheet
 entry (2-4 words), not a full sentence. Skip anything already listed under "Already tagged" for this scene. If
-nothing qualifies for a category, omit it. If the scene has no usable text, return an empty list rather than guessing.`;
+nothing qualifies for a category, omit it. If the scene has no usable text, return an empty list rather than guessing.
+
+For every element, also set quote to a short verbatim excerpt from the scene text marking where it actually appears
+or is described, so the element can be highlighted at its real position in the text later — see the quote field's
+own description for exactly what counts as verbatim.`;
 
 function normalize(s) {
   return String(s).trim().toLowerCase();
@@ -78,9 +87,18 @@ async function suggestSceneElements(scene, existingElements) {
   const toolUse = response.content.find((b) => b.type === 'tool_use');
   const elements = (toolUse && toolUse.input && toolUse.input.elements) || [];
 
-  return elements.filter(
-    (e) => e && e.category && e.value && e.value.trim() && !isDuplicate(existingElements, e.category, e.value)
-  );
+  // Defensively re-verify the quote actually appears in the scene's own
+  // text rather than trusting it outright -- a hallucinated or paraphrased
+  // "verbatim" quote just becomes no quote, falling back to matching on
+  // value alone (same as a manually-tagged element) rather than showing a
+  // wrong highlight.
+  const haystack = (scene.synopsis || '').toLowerCase();
+  return elements
+    .filter((e) => e && e.category && e.value && e.value.trim() && !isDuplicate(existingElements, e.category, e.value))
+    .map((e) => {
+      const quote = typeof e.quote === 'string' ? e.quote.trim() : '';
+      return { ...e, quote: quote && haystack.includes(quote.toLowerCase()) ? quote : null };
+    });
 }
 
 module.exports = { suggestSceneElements };

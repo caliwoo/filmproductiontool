@@ -143,6 +143,18 @@ const shotMarkerColumns = db.prepare('PRAGMA table_info(shots)').all().map((c) =
   }
 });
 
+const sceneElementColumns = db.prepare('PRAGMA table_info(scene_elements)').all().map((c) => c.name);
+if (!sceneElementColumns.includes('quote')) {
+  // A short verbatim excerpt (copied exactly) from the scene's own text that
+  // this element refers to, set by AI Select so the element can be
+  // highlighted at its real position in the screenplay preview -- value
+  // alone is often a paraphrased breakdown-sheet label (e.g. "Colorful
+  // Butterfly") that never appears as that exact phrase in the text, so
+  // matching against value alone missed most non-cast elements. NULL for
+  // manually-tagged elements, which fall back to matching on value itself.
+  db.exec('ALTER TABLE scene_elements ADD COLUMN quote TEXT');
+}
+
 const sceneColumns = db.prepare('PRAGMA table_info(scenes)').all().map((c) => c.name);
 if (!sceneColumns.includes('script_elements')) {
   // JSON array of {type, text} screenplay elements (action/character/parenthetical/

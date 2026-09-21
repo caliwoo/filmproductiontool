@@ -124,13 +124,13 @@ router.get('/:sceneId/elements', (req, res) => {
 });
 
 router.post('/:sceneId/elements', (req, res) => {
-  const { category, value } = req.body;
+  const { category, value, quote = null } = req.body;
   if (!category || !value || !value.trim()) {
     return res.status(400).json({ error: 'category and value are required' });
   }
   const result = db
-    .prepare('INSERT INTO scene_elements (scene_id, category, value) VALUES (?, ?, ?)')
-    .run(req.params.sceneId, category, value.trim());
+    .prepare('INSERT INTO scene_elements (scene_id, category, value, quote) VALUES (?, ?, ?, ?)')
+    .run(req.params.sceneId, category, value.trim(), quote);
 
   if (category === 'cast') {
     const scene = db.prepare('SELECT project_id FROM scenes WHERE id = ?').get(req.params.sceneId);
@@ -153,12 +153,12 @@ router.post('/:sceneId/elements/bulk', (req, res) => {
   const scene = db.prepare('SELECT project_id FROM scenes WHERE id = ?').get(req.params.sceneId);
   if (!scene) return res.status(404).json({ error: 'Scene not found' });
 
-  const insert = db.prepare('INSERT INTO scene_elements (scene_id, category, value) VALUES (?, ?, ?)');
+  const insert = db.prepare('INSERT INTO scene_elements (scene_id, category, value, quote) VALUES (?, ?, ?, ?)');
   const insertedIds = [];
   const tx = db.transaction((rows) => {
     rows.forEach((e) => {
       if (!e || !e.category || !e.value || !String(e.value).trim()) return;
-      const result = insert.run(req.params.sceneId, e.category, String(e.value).trim());
+      const result = insert.run(req.params.sceneId, e.category, String(e.value).trim(), e.quote || null);
       insertedIds.push(result.lastInsertRowid);
       if (e.category === 'cast') ensureCastContact(db, scene.project_id, e.value);
     });

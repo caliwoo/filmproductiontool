@@ -35,7 +35,7 @@ export default function AiTagDialog({ sceneId, onClose, onCommitted }) {
     setError('');
     try {
       await api.post(`/scenes/${sceneId}/elements/bulk`, {
-        elements: toAdd.map(({ category, value }) => ({ category, value })),
+        elements: toAdd.map(({ category, value, quote }) => ({ category, value, quote })),
       });
       onCommitted();
     } catch (err) {

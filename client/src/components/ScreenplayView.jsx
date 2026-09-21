@@ -13,20 +13,25 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Wraps every occurrence of a tagged breakdown element's value (e.g. a cast
-// member's name, a prop) in this line with a <mark> in that element's
-// category color, so a scene's tagged elements are visible right in the
-// script text instead of only in the tag list below it. Overlapping matches
-// (e.g. one tag's value is a substring of another's) keep only the longest,
-// leftmost match so text is never double-wrapped.
+// Wraps every occurrence of a tagged breakdown element in this line with a
+// <mark> in that element's category color, so a scene's tagged elements are
+// visible right in the script text instead of only in the tag list below
+// it. Matches against the element's own verbatim quote when AI Select
+// provided one (a value like "Colorful Butterfly" is often a paraphrased
+// breakdown-sheet label that never appears as that exact phrase in the
+// text, which is why only cast -- whose value IS usually the literal name
+// -- used to highlight); falls back to matching the value itself for
+// manually-tagged elements, same as before this quote existed. Overlapping
+// matches (e.g. one tag's text is a substring of another's) keep only the
+// longest, leftmost match so text is never double-wrapped.
 function highlightText(text, tags) {
   if (!tags || tags.length === 0) return text;
 
   const matches = [];
   tags.forEach((tag) => {
-    const value = tag.value && tag.value.trim();
-    if (!value) return;
-    const re = new RegExp(`\\b${escapeRegExp(value)}\\b`, 'gi');
+    const phrase = (tag.quote && tag.quote.trim()) || (tag.value && tag.value.trim());
+    if (!phrase) return;
+    const re = new RegExp(`\\b${escapeRegExp(phrase)}\\b`, 'gi');
     let match;
     while ((match = re.exec(text))) {
       matches.push({ start: match.index, end: match.index + match[0].length, category: tag.category });
