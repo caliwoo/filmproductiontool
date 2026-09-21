@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useOutletContext, useParams, Link } from 'react-router-dom';
 import api from '../api.js';
 
@@ -98,17 +98,42 @@ export default function CallSheetPage() {
             </tr>
           </thead>
           <tbody>
-            {scenes.map((s) => (
-              <tr key={s.id}>
-                <td>{s.scheduled_time || '—'}</td>
-                <td>
-                  {s.scene_number}. {s.int_ext}/{s.day_night}
-                </td>
-                <td>{s.heading}</td>
-                <td>{s.elements.filter((e) => e.category === 'cast').map((e) => e.value).join(', ') || '—'}</td>
-                <td>{s.location ? s.location.name : '—'}</td>
-              </tr>
-            ))}
+            {scenes.map((s, i) => {
+              // The Location/Address box above already covers the day's first
+              // scene(s) -- a day can now span more than one location, so a
+              // fresh Location/Address row is inserted right above the first
+              // scene shot at each *subsequent* location, ahead of where the
+              // company actually moves, rather than only ever showing one
+              // location for the whole day.
+              const prevLocationId = i > 0 ? scenes[i - 1].location_id : day.location_id;
+              const locationChanged = s.location_id !== prevLocationId;
+              return (
+                <Fragment key={s.id}>
+                  {locationChanged && s.location && (
+                    <tr className="call-sheet-location-change">
+                      <td colSpan={5}>
+                        <strong>Location:</strong> {s.location.name}
+                        {s.location.address && (
+                          <>
+                            {' '}
+                            &middot; <strong>Address:</strong> {s.location.address}
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td>{s.scheduled_time || '—'}</td>
+                    <td>
+                      {s.scene_number}. {s.int_ext}/{s.day_night}
+                    </td>
+                    <td>{s.heading}</td>
+                    <td>{s.elements.filter((e) => e.category === 'cast').map((e) => e.value).join(', ') || '—'}</td>
+                    <td>{s.location ? s.location.name : '—'}</td>
+                  </tr>
+                </Fragment>
+              );
+            })}
             {scenes.length === 0 && (
               <tr>
                 <td colSpan={5} className="muted">

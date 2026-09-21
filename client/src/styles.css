@@ -626,6 +626,14 @@ tr.dragging {
   margin-bottom: 2px;
 }
 
+/* Marks a company move partway through a shoot day's scene list -- flags the
+   new location's name/address right above the first scene shot there. */
+.call-sheet-location-change td {
+  background: #f8f9fb;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
 .print-btn {
   margin-bottom: 16px;
 }
