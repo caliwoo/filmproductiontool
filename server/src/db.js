@@ -2,7 +2,11 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 const { backfillCastContacts, migrateCastNameToRole } = require('./castSync');
-const { backfillSceneLocations, migrateHeadingNamesToSceneHeading } = require('./locationSync');
+const {
+  backfillSceneLocations,
+  migrateHeadingNamesToSceneHeading,
+  deleteOrphanedPlaceholders,
+} = require('./locationSync');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -179,5 +183,6 @@ migrateCastNameToRole(db);
 backfillCastContacts(db);
 migrateHeadingNamesToSceneHeading(db);
 backfillSceneLocations(db);
+deleteOrphanedPlaceholders(db);
 
 module.exports = db;

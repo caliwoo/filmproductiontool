@@ -51,10 +51,20 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
 
   async function handleAddLocation(e) {
     e.preventDefault();
-    if (!newLocationName.trim()) return;
+    const name = newLocationName.trim();
+    if (!name) return;
     try {
-      const newLoc = await api.post('/locations', { project_id: scene.project_id, name: newLocationName.trim() });
-      await api.put(`/scenes/${scene.id}`, { location_id: newLoc.id });
+      // If this scene is already pointed at a placeholder location (one
+      // auto-created from the script heading, with no real name yet), name
+      // that one instead of creating a separate location alongside it --
+      // otherwise the placeholder is left behind, unnamed and unused, while
+      // scenes are moved off it onto a brand new row.
+      if (location && !location.name) {
+        await api.put(`/locations/${location.id}`, { name });
+      } else {
+        const newLoc = await api.post('/locations', { project_id: scene.project_id, name });
+        await api.put(`/scenes/${scene.id}`, { location_id: newLoc.id });
+      }
       setNewLocationName('');
       setShowNewLocation(false);
       onChange();

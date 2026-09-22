@@ -83,10 +83,26 @@ function migrateHeadingNamesToSceneHeading(db) {
   });
 }
 
+// Removes a location that's both unnamed and unused -- left behind when a
+// scene is moved off an auto-created placeholder onto a different location
+// (e.g. naming a new one instead of the placeholder itself, from an older
+// build that didn't do this in place). Never touches a location with a real
+// name, or one still linked to at least one scene or shoot day, so nothing a
+// user has set up is ever deleted. Safe to run every time the server starts.
+function deleteOrphanedPlaceholders(db) {
+  db.prepare(
+    `DELETE FROM locations
+     WHERE (name = '' OR name IS NULL)
+       AND id NOT IN (SELECT location_id FROM scenes WHERE location_id IS NOT NULL)
+       AND id NOT IN (SELECT location_id FROM shoot_days WHERE location_id IS NOT NULL)`
+  ).run();
+}
+
 module.exports = {
   deriveLocationName,
   locationLabel,
   ensureLocation,
   backfillSceneLocations,
   migrateHeadingNamesToSceneHeading,
+  deleteOrphanedPlaceholders,
 };
