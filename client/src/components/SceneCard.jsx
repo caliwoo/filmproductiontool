@@ -16,6 +16,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [showNewLocation, setShowNewLocation] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [editingSynopsis, setEditingSynopsis] = useState(false);
+  const [editingLocationName, setEditingLocationName] = useState(false);
+  const [locationNameInput, setLocationNameInput] = useState('');
 
   const hasFormattedScript = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
   const hasLocation = Boolean(scene.location_id);
@@ -54,19 +56,27 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
     const name = newLocationName.trim();
     if (!name) return;
     try {
-      // If this scene is already pointed at a placeholder location (one
-      // auto-created from the script heading, with no real name yet), name
-      // that one instead of creating a separate location alongside it --
-      // otherwise the placeholder is left behind, unnamed and unused, while
-      // scenes are moved off it onto a brand new row.
-      if (location && !location.name) {
-        await api.put(`/locations/${location.id}`, { name });
-      } else {
-        const newLoc = await api.post('/locations', { project_id: scene.project_id, name });
-        await api.put(`/scenes/${scene.id}`, { location_id: newLoc.id });
-      }
+      const newLoc = await api.post('/locations', { project_id: scene.project_id, name });
+      await api.put(`/scenes/${scene.id}`, { location_id: newLoc.id });
       setNewLocationName('');
       setShowNewLocation(false);
+      onChange();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function startEditingLocationName() {
+    setLocationNameInput(location.name);
+    setEditingLocationName(true);
+  }
+
+  async function saveLocationName() {
+    const trimmed = locationNameInput.trim();
+    setEditingLocationName(false);
+    if (trimmed === location.name) return;
+    try {
+      await api.put(`/locations/${location.id}`, { name: trimmed });
       onChange();
     } catch (err) {
       setError(err.message);
@@ -80,7 +90,35 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           <span className="scene-heading-text">
             {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
           </span>
-          {location && location.name && <span className="scene-slug">{location.name}</span>}
+          {location &&
+            (editingLocationName ? (
+              <input
+                autoFocus
+                className="scene-slug-input"
+                value={locationNameInput}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setLocationNameInput(e.target.value)}
+                onBlur={saveLocationName}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.target.blur();
+                  if (e.key === 'Escape') setEditingLocationName(false);
+                }}
+              />
+            ) : (
+              <span className="scene-slug">
+                {location.name || '(unnamed)'}
+                <button
+                  className="icon-btn scene-slug-edit-btn"
+                  title="Rename this location"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingLocationName();
+                  }}
+                >
+                  ✎
+                </button>
+              </span>
+            ))}
         </div>
         <div className="flex-row">
           <span
