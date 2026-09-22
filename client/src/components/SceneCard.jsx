@@ -4,7 +4,6 @@ import AiTagDialog from './AiTagDialog.jsx';
 import PageLengthInput from './PageLengthInput.jsx';
 import ScreenplayView from './ScreenplayView.jsx';
 import { formatPageLength } from '../pageLength.js';
-import { locationLabel } from '../locationLabel.js';
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
@@ -64,6 +63,15 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
     }
   }
 
+  async function renameLocation(locationId, name) {
+    try {
+      await api.put(`/locations/${locationId}`, { name });
+      onChange();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div className="scene-card">
       <div className="scene-header" onClick={() => setOpen(!open)}>
@@ -71,12 +79,16 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           <span className="scene-heading-text">
             {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
           </span>
-          {location && <span className="scene-slug">{locationLabel(location)}</span>}
+          {location && location.name && <span className="scene-slug">{location.name}</span>}
         </div>
         <div className="flex-row">
           <span
             className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
-            title={hasLocation ? `Location: ${location ? locationLabel(location) : 'selected'}` : 'No location selected yet'}
+            title={
+              hasLocation
+                ? `Location: ${location && location.name ? location.name : 'selected, but not named yet'}`
+                : 'No location selected yet'
+            }
           >
             Location
           </span>
@@ -154,10 +166,21 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="">No location</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {locationLabel(l) || 'Unnamed location'}
+                  {l.name || '(unnamed)'}
                 </option>
               ))}
             </select>
+            {location && (
+              <input
+                key={`loc-name-${location.id}`}
+                placeholder={
+                  location.scene_heading ? `Real location name (script: "${location.scene_heading}")` : 'Real location name'
+                }
+                style={{ flex: 1 }}
+                defaultValue={location.name}
+                onBlur={(e) => e.target.value !== location.name && renameLocation(location.id, e.target.value)}
+              />
+            )}
             {!showNewLocation ? (
               <button
                 type="button"
