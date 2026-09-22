@@ -3,8 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { locationLabel } from '../locationLabel.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function LocationsPage() {
+  const { t } = useLanguage();
   const { projectId } = useOutletContext();
   const [locations, setLocations] = useState([]);
   const [scenes, setScenes] = useState([]);
@@ -63,7 +65,7 @@ export default function LocationsPage() {
   return (
     <div>
       <div className="page-header">
-        <h2>Locations</h2>
+        <h2>{t('locationsPage.title')}</h2>
       </div>
       {error && <div className="error-banner">{error}</div>}
 
@@ -71,13 +73,13 @@ export default function LocationsPage() {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th title="The set description auto-detected from the script's scene heading, e.g. &quot;APARTMENT&quot; -- not this location's real name">
-                Scene Heading
+              <th>{t('locationsPage.columns.name')}</th>
+              <th title={t('locationsPage.columns.sceneHeadingTooltip')}>
+                {t('locationsPage.columns.sceneHeading')}
               </th>
-              <th>Address</th>
-              <th>Notes</th>
-              <th title="Scenes tagged with this location, in script order">Scenes</th>
+              <th>{t('locationsPage.columns.address')}</th>
+              <th>{t('locationsPage.columns.notes')}</th>
+              <th title={t('locationsPage.columns.scenesTooltip')}>{t('locationsPage.columns.scenes')}</th>
               <th></th>
             </tr>
           </thead>
@@ -87,7 +89,7 @@ export default function LocationsPage() {
                 <td>
                   <input
                     defaultValue={l.name}
-                    placeholder="Real location name"
+                    placeholder={t('locationsPage.namePlaceholder')}
                     onBlur={(e) => e.target.value !== l.name && updateLocation(l.id, 'name', e.target.value)}
                   />
                 </td>
@@ -95,14 +97,14 @@ export default function LocationsPage() {
                 <td>
                   <input
                     defaultValue={l.address}
-                    placeholder="Address"
+                    placeholder={t('locationsPage.addressPlaceholder')}
                     onBlur={(e) => e.target.value !== l.address && updateLocation(l.id, 'address', e.target.value)}
                   />
                 </td>
                 <td>
                   <input
                     defaultValue={l.notes}
-                    placeholder="Notes"
+                    placeholder={t('locationsPage.notesPlaceholder')}
                     onBlur={(e) => e.target.value !== l.notes && updateLocation(l.id, 'notes', e.target.value)}
                   />
                 </td>
@@ -110,7 +112,7 @@ export default function LocationsPage() {
                   {(sceneNumbersByLocation.get(l.id) || []).join(', ') || '—'}
                 </td>
                 <td>
-                  <button className="icon-btn" onClick={() => setLocationToDelete(l)} title="Delete">
+                  <button className="icon-btn" onClick={() => setLocationToDelete(l)} title={t('common.delete')}>
                     ✕
                   </button>
                 </td>
@@ -119,7 +121,7 @@ export default function LocationsPage() {
             {locations.length === 0 && (
               <tr>
                 <td colSpan={6} className="muted">
-                  No locations yet.
+                  {t('locationsPage.noLocationsYet')}
                 </td>
               </tr>
             )}
@@ -128,31 +130,31 @@ export default function LocationsPage() {
 
         <form className="inline-form" onSubmit={handleAdd}>
           <input
-            placeholder="Name (e.g. Main St Diner)"
+            placeholder={t('locationsPage.addNamePlaceholder')}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <input
-            placeholder="Address"
+            placeholder={t('locationsPage.addressPlaceholder')}
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
           />
           <input
-            placeholder="Notes"
+            placeholder={t('locationsPage.notesPlaceholder')}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
           <button type="submit" className="btn">
-            Add
+            {t('locationsPage.addButton')}
           </button>
         </form>
       </div>
 
       {locationToDelete && (
         <ConfirmDialog
-          title="Delete location?"
-          message={`This will permanently remove "${locationLabel(locationToDelete)}" from this project. Any scenes or shoot days using it will be left with no location set.`}
-          confirmLabel="Delete Location"
+          title={t('locationsPage.deleteLocationTitle')}
+          message={t('locationsPage.deleteLocationMessage', { label: locationLabel(locationToDelete) })}
+          confirmLabel={t('locationsPage.deleteLocationConfirm')}
           onConfirm={confirmDelete}
           onCancel={() => setLocationToDelete(null)}
         />

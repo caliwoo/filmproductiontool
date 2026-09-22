@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import api from '../api.js';
 import ScriptSceneReviewTable from './ScriptSceneReviewTable.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 function nameFromFileName(fileName) {
   return fileName.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim();
 }
 
 export default function ImportProjectDialog({ onClose, onCreated }) {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [fileName, setFileName] = useState('');
   const [scenes, setScenes] = useState(null);
@@ -77,7 +79,7 @@ export default function ImportProjectDialog({ onClose, onCreated }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>New Project from Script (PDF)</h3>
+          <h3>{t('importProjectDialog.title')}</h3>
           <button className="icon-btn" onClick={onClose}>
             ✕
           </button>
@@ -86,31 +88,27 @@ export default function ImportProjectDialog({ onClose, onCreated }) {
         <div className="modal-body">
           {!scenes && (
             <div className="upload-drop">
-              <p className="muted">
-                Upload a screenplay PDF to create a new project from it. We&apos;ll prefill the project&apos;s name
-                and description from its title page where we can, and scan it for scenes the same way importing into
-                an existing project does.
-              </p>
+              <p className="muted">{t('importProjectDialog.uploadInstructions')}</p>
               <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} />
-              {parsing && <p className="muted">Parsing {fileName}...</p>}
+              {parsing && <p className="muted">{t('importProjectDialog.parsing', { fileName })}</p>}
             </div>
           )}
 
           {scenes && (
             <>
               <div className="new-project-form" style={{ marginBottom: 16 }}>
-                <input placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} />
                 <input
-                  placeholder="Description (optional)"
+                  placeholder={t('importProjectDialog.projectNamePlaceholder')}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <input
+                  placeholder={t('importProjectDialog.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              <p className="muted">
-                Detected {scenes.length} scene{scenes.length === 1 ? '' : 's'} in {fileName}. Review and edit before
-                creating the project &mdash; uncheck any that were misdetected. Page lengths are estimated from where
-                each scene falls in the PDF; adjust any that look off.
-              </p>
+              <p className="muted">{t('importProjectDialog.detectedScenes', { count: scenes.length, fileName })}</p>
               <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} onToggleAll={toggleAllScenes} />
             </>
           )}
@@ -121,11 +119,11 @@ export default function ImportProjectDialog({ onClose, onCreated }) {
               long scene list stays visible without scrolling back up to see it. */}
           {error && <div className="error-banner" style={{ marginRight: 'auto' }}>{error}</div>}
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('importProjectDialog.cancel')}
           </button>
           {scenes && (
             <button className="btn" disabled={creating || includedCount === 0 || !name.trim()} onClick={handleCreate}>
-              {creating ? 'Creating...' : `Create Project with ${includedCount} Scene${includedCount === 1 ? '' : 's'}`}
+              {creating ? t('importProjectDialog.creating') : t('importProjectDialog.createProject', { count: includedCount })}
             </button>
           )}
         </div>

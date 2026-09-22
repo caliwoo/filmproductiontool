@@ -5,8 +5,10 @@ import DayCard from '../components/DayCard.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import BuildScheduleDialog from '../components/BuildScheduleDialog.jsx';
 import { castNumbersByRole } from '../castId.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function SchedulePage() {
+  const { t } = useLanguage();
   const { projectId } = useOutletContext();
   const [days, setDays] = useState([]);
   const [assignmentsByDay, setAssignmentsByDay] = useState({});
@@ -173,13 +175,13 @@ export default function SchedulePage() {
   return (
     <div>
       <div className="page-header">
-        <h2>Schedule</h2>
+        <h2>{t('schedulePage.title')}</h2>
         <div className="flex-row">
           <button className="btn btn-secondary" onClick={() => setShowBuildSchedule(true)}>
-            ✨ Build Shooting Schedule
+            ✨ {t('schedulePage.buildSchedule')}
           </button>
           <button className="btn" onClick={handleAddDay}>
-            + Add Shoot Day
+            + {t('schedulePage.addShootDay')}
           </button>
         </div>
       </div>
@@ -187,13 +189,13 @@ export default function SchedulePage() {
 
       {dirty && (
         <div className="commit-bar">
-          <span>Drag order changed &mdash; not saved yet.</span>
+          <span>{t('schedulePage.dragOrderChanged')}</span>
           <div className="flex-row">
             <button className="btn btn-secondary" onClick={load} disabled={saving}>
-              Discard
+              {t('schedulePage.discard')}
             </button>
             <button className="btn" onClick={handleCommit} disabled={saving}>
-              {saving ? 'Saving...' : 'Commit Changes'}
+              {saving ? t('schedulePage.saving') : t('schedulePage.commitChanges')}
             </button>
           </div>
         </div>
@@ -231,14 +233,14 @@ export default function SchedulePage() {
             dayIndex={index}
           />
         ))}
-        {days.length === 0 && <p className="empty-state">No shoot days yet. Add your first one above.</p>}
+        {days.length === 0 && <p className="empty-state">{t('schedulePage.noShootDaysYet')}</p>}
       </div>
 
       {dayToDelete && (
         <ConfirmDialog
-          title="Delete shoot day?"
-          message={`This will permanently delete Day ${dayToDelete.day_number} and unassign its scenes and crew calls. This can't be undone.`}
-          confirmLabel="Delete Day"
+          title={t('schedulePage.deleteDayTitle')}
+          message={t('schedulePage.deleteDayMessage', { dayNumber: dayToDelete.day_number })}
+          confirmLabel={t('schedulePage.deleteDayConfirm')}
           onConfirm={confirmDeleteDay}
           onCancel={() => setDayToDelete(null)}
         />

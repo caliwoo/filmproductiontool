@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import api from '../api.js';
 import ScriptSceneReviewTable from './ScriptSceneReviewTable.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ScriptImportDialog({ projectId, onClose, onImported }) {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [fileName, setFileName] = useState('');
   const [scenes, setScenes] = useState(null);
@@ -61,7 +63,7 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Import Scenes from Script (PDF)</h3>
+          <h3>{t('scriptImportDialog.title')}</h3>
           <button className="icon-btn" onClick={onClose}>
             ✕
           </button>
@@ -71,21 +73,17 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
           {!scenes && (
             <div className="upload-drop">
               <p className="muted">
-                Upload a screenplay PDF. We&apos;ll scan it for scene headings (e.g. <code>INT. HOUSE - DAY</code>)
-                and detect each scene, numbering any that don&apos;t already have one.
+                {t('scriptImportDialog.uploadInstructionsPre')} <code>INT. HOUSE - DAY</code>{' '}
+                {t('scriptImportDialog.uploadInstructionsPost')}
               </p>
               <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} />
-              {parsing && <p className="muted">Parsing {fileName}...</p>}
+              {parsing && <p className="muted">{t('scriptImportDialog.parsing', { fileName })}</p>}
             </div>
           )}
 
           {scenes && (
             <>
-              <p className="muted">
-                Detected {scenes.length} scene{scenes.length === 1 ? '' : 's'} in {fileName}. Review and edit before
-                importing &mdash; uncheck any that were misdetected. Page lengths are estimated from where each scene
-                falls in the PDF; adjust any that look off.
-              </p>
+              <p className="muted">{t('scriptImportDialog.detectedScenes', { count: scenes.length, fileName })}</p>
               <ScriptSceneReviewTable scenes={scenes} onUpdateScene={updateScene} onToggleAll={toggleAllScenes} />
             </>
           )}
@@ -96,11 +94,11 @@ export default function ScriptImportDialog({ projectId, onClose, onImported }) {
               long scene list stays visible without scrolling back up to see it. */}
           {error && <div className="error-banner" style={{ marginRight: 'auto' }}>{error}</div>}
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('scriptImportDialog.cancel')}
           </button>
           {scenes && (
             <button className="btn" disabled={importing || includedCount === 0} onClick={handleImport}>
-              {importing ? 'Importing...' : `Import ${includedCount} Scene${includedCount === 1 ? '' : 's'}`}
+              {importing ? t('scriptImportDialog.importing') : t('scriptImportDialog.importScenes', { count: includedCount })}
             </button>
           )}
         </div>

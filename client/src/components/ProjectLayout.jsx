@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useParams, Link } from 'react-router-dom';
 import api from '../api.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ProjectLayout() {
   const { projectId } = useParams();
+  const { t } = useLanguage();
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
   const [editingName, setEditingName] = useState(false);
@@ -60,7 +62,7 @@ export default function ProjectLayout() {
           <div className="project-name">
             {project ? project.name : '...'}
             {project && (
-              <button className="icon-btn project-name-edit-btn" title="Rename project" onClick={startEditingName}>
+              <button className="icon-btn project-name-edit-btn" title={t('nav.renameProjectTooltip')} onClick={startEditingName}>
                 ✎
               </button>
             )}
@@ -68,23 +70,23 @@ export default function ProjectLayout() {
         )}
         <nav className="nav">
           <NavLink to="breakdown" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Script Breakdown
+            {t('nav.breakdown')}
           </NavLink>
           <NavLink to="shot-list" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Shot List
+            {t('nav.shotList')}
           </NavLink>
           <NavLink to="schedule" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Schedule
+            {t('nav.schedule')}
           </NavLink>
           <NavLink to="contacts" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Cast &amp; Crew
+            {t('nav.castCrew')}
           </NavLink>
           <NavLink to="locations" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Locations
+            {t('nav.locations')}
           </NavLink>
         </nav>
         <Link to="/" className="all-projects-link">
-          &larr; All Projects
+          {t('nav.allProjects')}
         </Link>
       </aside>
       <main className="content">

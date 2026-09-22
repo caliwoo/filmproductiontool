@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../api.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const SIZES = ['WS', 'MS', 'CU', 'ECU', 'OTS', 'POV', '2-Shot', 'Insert'];
 
 export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [candidates, setCandidates] = useState(null);
   const [committing, setCommitting] = useState(false);
@@ -60,52 +62,49 @@ export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" style={{ maxWidth: 1000 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>AI Suggest Shot List</h3>
+          <h3>{t('aiShotDialog.title')}</h3>
           <button className="icon-btn" onClick={onClose}>
             ✕
           </button>
         </div>
 
         <div className="modal-body">
-          {loading && <p className="muted">Reading the scene and drafting a shot list...</p>}
+          {loading && <p className="muted">{t('aiShotDialog.loadingText')}</p>}
 
           {error && (
             <div className="error-banner">
               {error}
               {notConfigured && (
                 <div style={{ marginTop: 6 }}>
-                  Add an <code>ANTHROPIC_API_KEY</code> environment variable to the server to enable this feature.
+                  {t('aiShotDialog.apiKeyHintPre')} <code>ANTHROPIC_API_KEY</code> {t('aiShotDialog.apiKeyHintPost')}
                 </div>
               )}
             </div>
           )}
 
           {!loading && !error && candidates && candidates.length === 0 && (
-            <p className="empty-state">Claude couldn't suggest any shots for this scene — try adding a synopsis.</p>
+            <p className="empty-state">{t('aiShotDialog.noSuggestions')}</p>
           )}
 
           {!loading && candidates && candidates.length > 0 && (
             <>
-              <p className="muted">
-                Claude suggested {candidates.length} shot{candidates.length === 1 ? '' : 's'} to cover this scene.
-                Review and edit before adding &mdash; uncheck anything that doesn&apos;t fit.
-              </p>
+              <p className="muted">{t('aiShotDialog.suggestedCount', { count: candidates.length })}</p>
               <div className="table-scroll">
                 <table>
                   <thead>
                     <tr>
                       <th></th>
-                      <th>#</th>
-                      <th>Size</th>
-                      <th>Angle</th>
-                      <th>Movement</th>
-                      <th>Subject</th>
-                      <th>Lens</th>
-                      <th>Description</th>
-                      <th>Composition</th>
-                      <th>Equipment</th>
-                      <th>Setup Notes</th>
-                      <th>Lines</th>
+                      <th>{t('aiShotDialog.columns.number')}</th>
+                      <th>{t('aiShotDialog.columns.size')}</th>
+                      <th>{t('aiShotDialog.columns.angle')}</th>
+                      <th>{t('aiShotDialog.columns.movement')}</th>
+                      <th>{t('aiShotDialog.columns.subject')}</th>
+                      <th>{t('aiShotDialog.columns.lens')}</th>
+                      <th>{t('aiShotDialog.columns.description')}</th>
+                      <th>{t('aiShotDialog.columns.composition')}</th>
+                      <th>{t('aiShotDialog.columns.equipment')}</th>
+                      <th>{t('aiShotDialog.columns.setupNotes')}</th>
+                      <th>{t('aiShotDialog.columns.lines')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -204,11 +203,11 @@ export default function AiShotDialog({ sceneId, onClose, onCommitted }) {
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('aiShotDialog.cancel')}
           </button>
           {candidates && candidates.length > 0 && (
             <button className="btn" disabled={committing || includedCount === 0} onClick={handleCommit}>
-              {committing ? 'Adding...' : `Add ${includedCount} Shot${includedCount === 1 ? '' : 's'}`}
+              {committing ? t('aiShotDialog.adding') : t('aiShotDialog.addShots', { count: includedCount })}
             </button>
           )}
         </div>

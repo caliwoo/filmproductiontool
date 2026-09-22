@@ -4,10 +4,12 @@ import AiTagDialog from './AiTagDialog.jsx';
 import PageLengthInput from './PageLengthInput.jsx';
 import ScreenplayView from './ScreenplayView.jsx';
 import { formatPageLength } from '../pageLength.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const CATEGORIES = ['cast', 'stunts', 'extras', 'props', 'wardrobe', 'vehicles', 'sfx', 'vfx', 'sound', 'makeup', 'animals', 'notes'];
 
 export default function SceneCard({ scene, locations, onChange, onDelete }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [tagCategory, setTagCategory] = useState('cast');
   const [tagValue, setTagValue] = useState('');
@@ -117,10 +119,10 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               />
             ) : (
               <span className="scene-slug">
-                {location.name || '(unnamed)'}
+                {location.name || t('sceneCard.unnamed')}
                 <button
                   className="icon-btn scene-slug-edit-btn"
-                  title="Rename this location"
+                  title={t('sceneCard.renameLocationTooltip')}
                   onClick={(e) => {
                     e.stopPropagation();
                     startEditingLocationName();
@@ -136,24 +138,28 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
             title={
               hasLocation
-                ? `Location: ${location.name}`
+                ? t('sceneCard.locationReadyTooltip', { name: location.name })
                 : location
-                ? 'Location not named yet — click the pencil next to it above'
-                : 'No location selected yet'
+                ? t('sceneCard.locationUnnamedTooltip')
+                : t('sceneCard.locationNoneTooltip')
             }
           >
-            Location
+            {t('sceneCard.locationBadge')}
           </span>
           <span
             className={`readiness-badge ${hasBreakdown ? 'ready' : 'pending'}`}
-            title={hasBreakdown ? `${scene.elements.length} breakdown element${scene.elements.length === 1 ? '' : 's'} tagged` : 'No breakdown elements tagged yet'}
+            title={
+              hasBreakdown
+                ? t('sceneCard.breakdownReadyTooltip', { count: scene.elements.length })
+                : t('sceneCard.breakdownPendingTooltip')
+            }
           >
-            Breakdown
+            {t('sceneCard.breakdownBadge')}
           </span>
           <span className="muted" style={{ fontSize: 12 }} title="Script length">
-            {formatPageLength(scene.page_count)} pgs
+            {formatPageLength(scene.page_count)} {t('sceneCard.pagesSuffix')}
           </span>
-          <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? 'Shot' : 'Not shot'}</span>
+          <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? t('sceneCard.shot') : t('sceneCard.notShot')}</span>
           <a
             className="btn btn-secondary"
             style={{
@@ -164,10 +170,10 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             }}
             href={hasBreakdown ? `/api/scenes/${scene.id}/breakdown-pdf` : undefined}
             onClick={(e) => e.stopPropagation()}
-            title={hasBreakdown ? 'Download PDF breakdown sheet' : 'Tag at least one breakdown element first'}
+            title={hasBreakdown ? t('sceneCard.pdfBreakdownReadyTooltip') : t('sceneCard.pdfBreakdownPendingTooltip')}
             aria-disabled={!hasBreakdown}
           >
-            PDF Breakdown
+            {t('sceneCard.pdfBreakdown')}
           </a>
           <button
             className="icon-btn"
@@ -175,7 +181,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               e.stopPropagation();
               onDelete(scene.id);
             }}
-            title="Delete scene"
+            title={t('sceneCard.deleteSceneTooltip')}
           >
             ✕
           </button>
@@ -188,7 +194,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
 
           <div className="inline-form">
             <input
-              placeholder="Scene #"
+              placeholder={t('sceneCard.scenePlaceholder')}
               style={{ flex: '0 0 70px' }}
               defaultValue={scene.scene_number}
               onBlur={(e) => updateField('scene_number', e.target.value)}
@@ -199,7 +205,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="INT/EXT">INT/EXT</option>
             </select>
             <input
-              placeholder="Heading / slugline"
+              placeholder={t('sceneCard.headingPlaceholder')}
               style={{ flex: 2 }}
               defaultValue={scene.heading}
               onBlur={(e) => updateField('heading', e.target.value)}
@@ -215,7 +221,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               defaultValue={location && location.name ? scene.location_id : ''}
               onChange={(e) => updateField('location_id', e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">No location</option>
+              <option value="">{t('sceneCard.noLocationOption')}</option>
               {locations
                 .filter((l) => l.name)
                 .map((l) => (
@@ -228,7 +234,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <button
                 type="button"
                 className="icon-btn"
-                title="Add a new location"
+                title={t('sceneCard.addLocationTooltip')}
                 onClick={() => setShowNewLocation(true)}
                 style={{ fontSize: 18, fontWeight: 700, flex: '0 0 auto' }}
               >
@@ -238,7 +244,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <>
                 <input
                   autoFocus
-                  placeholder="New location name"
+                  placeholder={t('sceneCard.newLocationPlaceholder')}
                   style={{ flex: 1 }}
                   value={newLocationName}
                   onChange={(e) => setNewLocationName(e.target.value)}
@@ -251,12 +257,12 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
                   }}
                 />
                 <button type="button" className="btn btn-secondary" onClick={handleAddLocation}>
-                  Add
+                  {t('sceneCard.add')}
                 </button>
                 <button
                   type="button"
                   className="icon-btn"
-                  title="Cancel"
+                  title={t('sceneCard.cancelTooltip')}
                   onClick={() => {
                     setShowNewLocation(false);
                     setNewLocationName('');
@@ -267,8 +273,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               </>
             )}
             <select defaultValue={scene.status} onChange={(e) => updateField('status', e.target.value)}>
-              <option value="not_shot">Not shot</option>
-              <option value="shot">Shot</option>
+              <option value="not_shot">{t('sceneCard.notShot')}</option>
+              <option value="shot">{t('sceneCard.shot')}</option>
             </select>
             <PageLengthInput
               value={scene.page_count}
@@ -279,13 +285,12 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
 
           {!scene.location_id && (
             <p className="muted" style={{ marginTop: 4 }}>
-              No location selected — pick one above and it will automatically fill in on the call sheet and PDF
-              breakdown sheet for this scene.
+              {t('sceneCard.noLocationHelp')}
             </p>
           )}
           {scene.location_id && !hasLocation && (
             <p className="muted" style={{ marginTop: 4 }}>
-              This location doesn't have a real name yet — click the pencil next to it above to name it.
+              {t('sceneCard.unnamedLocationHelp')}
             </p>
           )}
 
@@ -298,12 +303,12 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
                 style={{ marginTop: 8, fontSize: 12, padding: '5px 10px' }}
                 onClick={() => setEditingSynopsis(true)}
               >
-                Edit text
+                {t('sceneCard.editText')}
               </button>
             </div>
           ) : (
             <textarea
-              placeholder="Synopsis"
+              placeholder={t('sceneCard.synopsisPlaceholder')}
               style={{ width: '100%', marginTop: 10, minHeight: 50 }}
               defaultValue={scene.synopsis}
               onBlur={(e) => {
@@ -314,13 +319,13 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
           )}
 
           <div className="section-label flex-row" style={{ justifyContent: 'space-between' }}>
-            <span>Breakdown Elements</span>
+            <span>{t('sceneCard.breakdownElementsLabel')}</span>
             <button
               className="btn btn-secondary"
               onClick={() => setShowAiTag(true)}
               style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 'normal', fontSize: 13 }}
             >
-              ✨ AI Select
+              ✨ {t('sceneCard.aiSelect')}
             </button>
           </div>
 
@@ -342,7 +347,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
                 <button onClick={() => removeTag(el.id)}>✕</button>
               </span>
             ))}
-            {scene.elements.length === 0 && <span className="muted">No elements tagged yet.</span>}
+            {scene.elements.length === 0 && <span className="muted">{t('sceneCard.noElementsTagged')}</span>}
           </div>
           <form className="inline-form" onSubmit={addTag}>
             <select value={tagCategory} onChange={(e) => setTagCategory(e.target.value)}>
@@ -353,13 +358,13 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               ))}
             </select>
             <input
-              placeholder="Element name (e.g. JANE, Coffee Mug)"
+              placeholder={t('sceneCard.elementPlaceholder')}
               style={{ flex: 2 }}
               value={tagValue}
               onChange={(e) => setTagValue(e.target.value)}
             />
             <button type="submit" className="btn btn-secondary">
-              Tag Element
+              {t('sceneCard.tagElement')}
             </button>
           </form>
         </div>

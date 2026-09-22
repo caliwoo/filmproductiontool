@@ -3,10 +3,12 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { castNumbersByRole } from '../castId.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const DEPARTMENTS = ['cast', 'crew', 'production', 'vendor'];
 
 export default function ContactsPage() {
+  const { t } = useLanguage();
   const { projectId } = useOutletContext();
   const [contacts, setContacts] = useState([]);
   const [form, setForm] = useState({ name: '', role: '', department: 'crew', phone: '', email: '' });
@@ -53,7 +55,7 @@ export default function ContactsPage() {
   return (
     <div>
       <div className="page-header">
-        <h2>Cast &amp; Crew</h2>
+        <h2>{t('contactsPage.title')}</h2>
       </div>
       {error && <div className="error-banner">{error}</div>}
 
@@ -61,13 +63,13 @@ export default function ContactsPage() {
         <table>
           <thead>
             <tr>
-              <th>{'Name'}</th>
-              <th title="Stripboard-style Cast ID#, same number shown on Schedule and call sheets">Cast ID</th>
-              <th>{'Role / Character'}</th>
-              <th>Department</th>
-              <th title="Lead cast get priority for a schedule with fewer days off">Lead</th>
-              <th>Phone</th>
-              <th>Email</th>
+              <th>{t('contactsPage.columns.name')}</th>
+              <th title={t('contactsPage.columns.castIdTooltip')}>{t('contactsPage.columns.castId')}</th>
+              <th>{t('contactsPage.columns.roleCharacter')}</th>
+              <th>{t('contactsPage.columns.department')}</th>
+              <th title={t('contactsPage.columns.leadTooltip')}>{t('contactsPage.columns.lead')}</th>
+              <th>{t('contactsPage.columns.phone')}</th>
+              <th>{t('contactsPage.columns.email')}</th>
               <th></th>
             </tr>
           </thead>
@@ -77,7 +79,7 @@ export default function ContactsPage() {
                 <td>
                   <input
                     defaultValue={c.name}
-                    placeholder={c.department === 'cast' ? 'Actor name (once cast)' : 'Name'}
+                    placeholder={c.department === 'cast' ? t('contactsPage.placeholders.actorName') : t('contactsPage.placeholders.name')}
                     onBlur={(e) => e.target.value !== c.name && updateContact(c.id, 'name', e.target.value)}
                   />
                 </td>
@@ -87,7 +89,7 @@ export default function ContactsPage() {
                 <td>
                   <input
                     defaultValue={c.role}
-                    placeholder={c.department === 'cast' ? 'Character' : 'Role'}
+                    placeholder={c.department === 'cast' ? t('contactsPage.placeholders.character') : t('contactsPage.placeholders.role')}
                     onBlur={(e) => e.target.value !== c.role && updateContact(c.id, 'role', e.target.value)}
                   />
                 </td>
@@ -105,7 +107,7 @@ export default function ContactsPage() {
                     <input
                       type="checkbox"
                       checked={!!c.is_lead}
-                      title="Lead cast: prioritize clustering this actor's scenes to minimize their days off"
+                      title={t('contactsPage.leadCheckboxTooltip')}
                       onChange={(e) => updateContact(c.id, 'is_lead', e.target.checked)}
                     />
                   ) : (
@@ -115,19 +117,19 @@ export default function ContactsPage() {
                 <td>
                   <input
                     defaultValue={c.phone}
-                    placeholder="Phone"
+                    placeholder={t('contactsPage.placeholders.phone')}
                     onBlur={(e) => e.target.value !== c.phone && updateContact(c.id, 'phone', e.target.value)}
                   />
                 </td>
                 <td>
                   <input
                     defaultValue={c.email}
-                    placeholder="Email"
+                    placeholder={t('contactsPage.placeholders.email')}
                     onBlur={(e) => e.target.value !== c.email && updateContact(c.id, 'email', e.target.value)}
                   />
                 </td>
                 <td>
-                  <button className="icon-btn" onClick={() => setContactToDelete(c)} title="Delete">
+                  <button className="icon-btn" onClick={() => setContactToDelete(c)} title={t('common.delete')}>
                     ✕
                   </button>
                 </td>
@@ -136,7 +138,7 @@ export default function ContactsPage() {
             {contacts.length === 0 && (
               <tr>
                 <td colSpan={8} className="muted">
-                  No contacts yet.
+                  {t('contactsPage.noContactsYet')}
                 </td>
               </tr>
             )}
@@ -145,12 +147,12 @@ export default function ContactsPage() {
 
         <form className="inline-form" onSubmit={handleAdd}>
           <input
-            placeholder="Name"
+            placeholder={t('contactsPage.placeholders.name')}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <input
-            placeholder="Role (e.g. Gaffer)"
+            placeholder={t('contactsPage.placeholders.rolePrompt')}
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           />
@@ -162,26 +164,28 @@ export default function ContactsPage() {
             ))}
           </select>
           <input
-            placeholder="Phone"
+            placeholder={t('contactsPage.placeholders.phone')}
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
           <input
-            placeholder="Email"
+            placeholder={t('contactsPage.placeholders.email')}
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
           <button type="submit" className="btn">
-            Add
+            {t('contactsPage.addButton')}
           </button>
         </form>
       </div>
 
       {contactToDelete && (
         <ConfirmDialog
-          title="Delete contact?"
-          message={`This will permanently remove "${contactToDelete.name || contactToDelete.role || 'this entry'}" from this project's cast & crew, including any call times set for them.`}
-          confirmLabel="Delete Contact"
+          title={t('contactsPage.deleteContactTitle')}
+          message={t('contactsPage.deleteContactMessage', {
+            label: contactToDelete.name || contactToDelete.role || 'this entry',
+          })}
+          confirmLabel={t('contactsPage.deleteContactConfirm')}
           onConfirm={confirmDelete}
           onCancel={() => setContactToDelete(null)}
         />

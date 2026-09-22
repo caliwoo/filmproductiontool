@@ -2,6 +2,7 @@ import { useState } from 'react';
 import api from '../api.js';
 import AiShotDialog from './AiShotDialog.jsx';
 import { markedShotColors } from '../shotColors.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const SIZES = ['WS', 'MS', 'CU', 'ECU', 'OTS', 'POV', '2-Shot', 'Insert'];
 
@@ -19,6 +20,7 @@ const EMPTY_FORM = {
 };
 
 export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [showAiShots, setShowAiShots] = useState(false);
@@ -53,13 +55,13 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
   return (
     <div>
       <div className="section-label flex-row" style={{ justifyContent: 'space-between' }}>
-        <span>Shot List</span>
+        <span>{t('shotList.sectionLabel')}</span>
         <button
           className="btn btn-secondary"
           onClick={() => setShowAiShots(true)}
           style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 'normal', fontSize: 13 }}
         >
-          ✨ Create Shot List (AI)
+          ✨ {t('shotList.createShotListAI')}
         </button>
       </div>
 
@@ -81,17 +83,17 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Size</th>
-                <th>Angle</th>
-                <th>Movement</th>
-                <th>Subject</th>
-                <th>Lens</th>
-                <th>Description</th>
-                <th>Composition</th>
-                <th>Equipment</th>
-                <th>Setup Notes</th>
-                <th>Status</th>
+                <th>{t('shotList.columns.number')}</th>
+                <th>{t('shotList.columns.size')}</th>
+                <th>{t('shotList.columns.angle')}</th>
+                <th>{t('shotList.columns.movement')}</th>
+                <th>{t('shotList.columns.subject')}</th>
+                <th>{t('shotList.columns.lens')}</th>
+                <th>{t('shotList.columns.description')}</th>
+                <th>{t('shotList.columns.composition')}</th>
+                <th>{t('shotList.columns.equipment')}</th>
+                <th>{t('shotList.columns.setupNotes')}</th>
+                <th>{t('shotList.columns.status')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -141,14 +143,14 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
                   </td>
                   <td>
                     <input
-                      placeholder="e.g. JANE"
+                      placeholder={t('shotList.rowPlaceholders.subject')}
                       defaultValue={shot.subject}
                       onBlur={(e) => e.target.value !== shot.subject && updateShotField(shot, 'subject', e.target.value)}
                     />
                   </td>
                   <td>
                     <input
-                      placeholder="e.g. 35mm"
+                      placeholder={t('shotList.rowPlaceholders.lens')}
                       defaultValue={shot.lens}
                       onBlur={(e) => e.target.value !== shot.lens && updateShotField(shot, 'lens', e.target.value)}
                     />
@@ -162,7 +164,7 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
                   </td>
                   <td>
                     <input
-                      placeholder="FG/MG/BG"
+                      placeholder={t('shotList.rowPlaceholders.composition')}
                       style={{ minWidth: 140 }}
                       defaultValue={shot.spatial_composition}
                       onBlur={(e) =>
@@ -178,7 +180,7 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
                   </td>
                   <td>
                     <input
-                      placeholder="Gear / lighting / blocking"
+                      placeholder={t('shotList.rowPlaceholders.setupNotes')}
                       style={{ minWidth: 140 }}
                       defaultValue={shot.setup_notes}
                       onBlur={(e) => e.target.value !== shot.setup_notes && updateShotField(shot, 'setup_notes', e.target.value)}
@@ -190,7 +192,7 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
                       style={{ border: 'none', cursor: 'pointer' }}
                       onClick={() => toggleStatus(shot)}
                     >
-                      {shot.status === 'shot' ? 'Shot' : 'Not shot'}
+                      {shot.status === 'shot' ? t('shotList.shot') : t('shotList.notShot')}
                     </button>
                   </td>
                   <td>
@@ -207,8 +209,8 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
 
       <form className="inline-form" onSubmit={handleAdd}>
         <input
-          placeholder="Shot #"
-          title="Inserting a shot between existing ones? Use a letter suffix (e.g. 3A) instead of renumbering."
+          placeholder={t('shotList.formPlaceholders.shotNumber')}
+          title={t('shotList.formPlaceholders.shotNumberTooltip')}
           style={{ flex: '0 0 70px' }}
           value={form.shot_number}
           onChange={(e) => setForm({ ...form, shot_number: e.target.value })}
@@ -221,39 +223,43 @@ export default function ShotList({ sceneId, shots, onChange: load, onMarkClick }
           ))}
         </select>
         <input
-          placeholder="Angle"
+          placeholder={t('shotList.formPlaceholders.angle')}
           value={form.angle}
           onChange={(e) => setForm({ ...form, angle: e.target.value })}
         />
         <input
-          placeholder="Movement"
+          placeholder={t('shotList.formPlaceholders.movement')}
           value={form.movement}
           onChange={(e) => setForm({ ...form, movement: e.target.value })}
         />
         <input
-          placeholder="Subject"
+          placeholder={t('shotList.formPlaceholders.subject')}
           value={form.subject}
           onChange={(e) => setForm({ ...form, subject: e.target.value })}
         />
-        <input placeholder="Lens" value={form.lens} onChange={(e) => setForm({ ...form, lens: e.target.value })} />
         <input
-          placeholder="Description"
+          placeholder={t('shotList.formPlaceholders.lens')}
+          value={form.lens}
+          onChange={(e) => setForm({ ...form, lens: e.target.value })}
+        />
+        <input
+          placeholder={t('shotList.formPlaceholders.description')}
           style={{ flex: 2 }}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
         <input
-          placeholder="Equipment"
+          placeholder={t('shotList.formPlaceholders.equipment')}
           value={form.equipment}
           onChange={(e) => setForm({ ...form, equipment: e.target.value })}
         />
         <input
-          placeholder="Setup notes"
+          placeholder={t('shotList.formPlaceholders.setupNotes')}
           value={form.setup_notes}
           onChange={(e) => setForm({ ...form, setup_notes: e.target.value })}
         />
         <button type="submit" className="btn">
-          Add Shot
+          {t('shotList.addShot')}
         </button>
       </form>
     </div>

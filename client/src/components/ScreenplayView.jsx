@@ -1,4 +1,5 @@
 import { markedShotColors } from '../shotColors.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const TYPE_CLASS = {
   scene_heading: 'scene-heading',
@@ -73,7 +74,7 @@ function highlightText(text, tags) {
 // resulting segment. Each mark is clickable, jumping to that shot's row in
 // the shot list below (via onMarkClick), so the mark is a real reference
 // into the list rather than just a static annotation.
-function renderLine(text, tags, markers, onMarkClick) {
+function renderLine(text, tags, markers, onMarkClick, t) {
   if (!markers.length) return highlightText(text, tags);
 
   const parts = [];
@@ -87,7 +88,10 @@ function renderLine(text, tags, markers, onMarkClick) {
         id={`shot-mark-${m.id}`}
         className="shot-cut-mark"
         style={{ borderColor: m.color, color: m.color }}
-        title={`Shot ${m.shot_number}${m.description ? `: ${m.description}` : ''} — click to jump to it in the shot list`}
+        title={t('screenplayView.markTitle', {
+          number: m.shot_number,
+          desc: m.description ? `: ${m.description}` : '',
+        })}
         role="button"
         tabIndex={0}
         onClick={() => onMarkClick && onMarkClick(m.id)}
@@ -105,6 +109,7 @@ function renderLine(text, tags, markers, onMarkClick) {
 }
 
 export default function ScreenplayView({ elements, tags, shots, onMarkClick }) {
+  const { t } = useLanguage();
   // Only a shot the AI (or an edit) placed at a specific point in the text
   // can be marked -- manually-added shots have no marker and just don't
   // appear here, same as before this feature existed.
@@ -120,7 +125,7 @@ export default function ScreenplayView({ elements, tags, shots, onMarkClick }) {
     <div className="screenplay-view">
       {elements.map((el, i) => (
         <p key={i} className={TYPE_CLASS[el.type] || 'action'}>
-          {renderLine(el.text, tags, markersForLine(i), onMarkClick)}
+          {renderLine(el.text, tags, markersForLine(i), onMarkClick, t)}
         </p>
       ))}
 
@@ -140,7 +145,7 @@ export default function ScreenplayView({ elements, tags, shots, onMarkClick }) {
               <span className="shot-cut-mark shot-cut-mark-legend" style={{ borderColor: colors.get(s.id), color: colors.get(s.id) }}>
                 {s.shot_number}
               </span>
-              {s.description || `${s.size} ${s.angle}`.trim() || 'Shot'}
+              {s.description || `${s.size} ${s.angle}`.trim() || t('screenplayView.shotFallback')}
             </span>
           ))}
         </div>

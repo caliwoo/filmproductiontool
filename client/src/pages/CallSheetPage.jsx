@@ -2,8 +2,10 @@ import { Fragment, useEffect, useState } from 'react';
 import { useOutletContext, useParams, Link } from 'react-router-dom';
 import api from '../api.js';
 import { locationLabel } from '../locationLabel.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function CallSheetPage() {
+  const { t } = useLanguage();
   const { projectId } = useOutletContext();
   const { dayId } = useParams();
   const [data, setData] = useState(null);
@@ -51,10 +53,10 @@ export default function CallSheetPage() {
     <div>
       <div className="flex-row print-btn no-print">
         <Link to=".." className="btn btn-secondary">
-          &larr; Back to Schedule
+          {t('callSheetPage.backToSchedule')}
         </Link>
         <button className="btn" onClick={() => window.print()}>
-          Print / Save PDF
+          {t('callSheetPage.printSavePdf')}
         </button>
       </div>
 
@@ -62,40 +64,40 @@ export default function CallSheetPage() {
         <div className="call-sheet-header">
           <div>
             <h1>{project.name}</h1>
-            <div className="muted">Call Sheet &mdash; Day {day.day_number}</div>
+            <div className="muted">{t('callSheetPage.callSheetDayLabel', { number: day.day_number })}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div>
-              <strong>{day.shoot_date || 'Date TBD'}</strong>
+              <strong>{day.shoot_date || t('callSheetPage.dateTBD')}</strong>
             </div>
-            <div className="muted">General Call: {day.general_call_time || 'TBD'}</div>
+            <div className="muted">{t('callSheetPage.generalCall', { time: day.general_call_time || t('callSheetPage.tbd') })}</div>
           </div>
         </div>
 
         <div className="call-sheet-grid">
           <div className="field">
-            <label>Location</label>
-            {location ? locationLabel(location) : 'TBD'}
+            <label>{t('callSheetPage.location')}</label>
+            {location ? locationLabel(location) : t('callSheetPage.tbd')}
           </div>
           <div className="field">
-            <label>Address</label>
+            <label>{t('callSheetPage.address')}</label>
             {location ? location.address || '—' : '—'}
           </div>
           <div className="field">
-            <label>Weather</label>
+            <label>{t('callSheetPage.weather')}</label>
             {day.weather || '—'}
           </div>
         </div>
 
-        <div className="section-label">Scenes</div>
+        <div className="section-label">{t('callSheetPage.scenesSectionLabel')}</div>
         <table>
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Scene</th>
-              <th>Description</th>
-              <th>Cast</th>
-              <th>Location</th>
+              <th>{t('callSheetPage.columns.time')}</th>
+              <th>{t('callSheetPage.columns.scene')}</th>
+              <th>{t('callSheetPage.columns.description')}</th>
+              <th>{t('callSheetPage.columns.cast')}</th>
+              <th>{t('callSheetPage.columns.location')}</th>
             </tr>
           </thead>
           <tbody>
@@ -113,11 +115,11 @@ export default function CallSheetPage() {
                   {locationChanged && s.location && (
                     <tr className="call-sheet-location-change">
                       <td colSpan={5}>
-                        <strong>Location:</strong> {locationLabel(s.location)}
+                        <strong>{t('callSheetPage.locationLabel')}</strong> {locationLabel(s.location)}
                         {s.location.address && (
                           <>
                             {' '}
-                            &middot; <strong>Address:</strong> {s.location.address}
+                            &middot; <strong>{t('callSheetPage.addressLabel')}</strong> {s.location.address}
                           </>
                         )}
                       </td>
@@ -138,22 +140,22 @@ export default function CallSheetPage() {
             {scenes.length === 0 && (
               <tr>
                 <td colSpan={5} className="muted">
-                  No scenes scheduled for this day.
+                  {t('callSheetPage.noScenesScheduled')}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
 
-        <div className="section-label">Cast &amp; Crew Call Times</div>
+        <div className="section-label">{t('callSheetPage.castCrewCallTimesLabel')}</div>
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Department</th>
-              <th>Phone</th>
-              <th>Call Time</th>
+              <th>{t('callSheetPage.columns2.name')}</th>
+              <th>{t('callSheetPage.columns2.role')}</th>
+              <th>{t('callSheetPage.columns2.department')}</th>
+              <th>{t('callSheetPage.columns2.phone')}</th>
+              <th>{t('callSheetPage.columns2.callTime')}</th>
               <th className="no-print"></th>
             </tr>
           </thead>
@@ -161,7 +163,7 @@ export default function CallSheetPage() {
             {calls.map((c) => (
               <tr key={c.id}>
                 <td>
-                  {c.name || <span className="muted">{c.role ? `${c.role} (uncast)` : 'Unnamed'}</span>}
+                  {c.name || <span className="muted">{c.role ? t('callSheetPage.uncast', { role: c.role }) : t('callSheetPage.unnamed')}</span>}
                   {c.department === 'cast' && (
                     <span className="badge" style={{ marginLeft: 6 }}>
                       cast
@@ -189,7 +191,7 @@ export default function CallSheetPage() {
             {calls.length === 0 && (
               <tr>
                 <td colSpan={6} className="muted">
-                  No one called yet.
+                  {t('callSheetPage.noOneCalledYet')}
                 </td>
               </tr>
             )}
@@ -198,15 +200,15 @@ export default function CallSheetPage() {
 
         <form className="inline-form no-print" onSubmit={handleAddCall}>
           <select value={contactToAdd} onChange={(e) => setContactToAdd(e.target.value)}>
-            <option value="">Add cast/crew to this call sheet...</option>
+            <option value="">{t('callSheetPage.addCallPlaceholderOption')}</option>
             {availableContacts.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name || c.role || 'Unnamed'} ({c.department})
+                {c.name || c.role || t('callSheetPage.unnamed')} ({c.department})
               </option>
             ))}
           </select>
           <button type="submit" className="btn btn-secondary">
-            Add
+            {t('callSheetPage.addButton')}
           </button>
         </form>
       </div>

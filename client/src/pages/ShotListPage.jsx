@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import SceneShotPanel from '../components/SceneShotPanel.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ShotListPage() {
+  const { t } = useLanguage();
   const { projectId, project } = useOutletContext();
   const [tab, setTab] = useState('scenes');
   const [scenes, setScenes] = useState([]);
@@ -54,19 +56,19 @@ export default function ShotListPage() {
   return (
     <div>
       <div className="page-header">
-        <h2>Shot List</h2>
+        <h2>{t('shotListPage.title')}</h2>
         {tab === 'report' && (
           <div className="flex-row">
             <label
               className="flex-row"
               style={{ gap: 6, fontSize: 13 }}
-              title="Group shots by location, angle, and lens instead of script order, so the 1st AD can call setups without unnecessary re-lighting or camera moves"
+              title={t('shotListPage.batchBySetupTooltip')}
             >
               <input type="checkbox" checked={groupBySetup} onChange={(e) => setGroupBySetup(e.target.checked)} />
-              Batch by setup
+              {t('shotListPage.batchBySetup')}
             </label>
             <a className="btn" href={pdfHref}>
-              Download PDF
+              {t('shotListPage.downloadPdf')}
             </a>
           </div>
         )}
@@ -74,10 +76,10 @@ export default function ShotListPage() {
 
       <div className="tabs">
         <button className={tab === 'scenes' ? 'active' : ''} onClick={() => setTab('scenes')}>
-          By Scene
+          {t('shotListPage.tabByScene')}
         </button>
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>
-          Report
+          {t('shotListPage.tabReport')}
         </button>
       </div>
 
@@ -86,8 +88,8 @@ export default function ShotListPage() {
       {tab === 'scenes' && (
         <>
           <p className="muted" style={{ marginBottom: 12 }}>
-            Select a scene to see its screenplay text and build its shot list, manually or with{' '}
-            <strong>Create Shot List (AI)</strong>.
+            {t('shotListPage.intro')}{' '}
+            <strong>{t('shotListPage.introStrong')}</strong>.
           </p>
           {scenes.map((scene) => (
             <SceneShotPanel
@@ -97,17 +99,17 @@ export default function ShotListPage() {
               onShotsChange={handleSceneShotsChange}
             />
           ))}
-          {scenes.length === 0 && <p className="empty-state">No scenes yet. Add scenes in Script Breakdown first.</p>}
+          {scenes.length === 0 && <p className="empty-state">{t('shotListPage.noScenesYet')}</p>}
         </>
       )}
 
       {tab === 'report' && (
         <div className="shotlist-sheet">
-          <h1 className="shotlist-title">SHOT LIST</h1>
+          <h1 className="shotlist-title">{t('shotListPage.reportTitle')}</h1>
           <div className="shotlist-subtitle">&quot;{project ? project.name : ''}&quot;</div>
           {groupBySetup && (
             <p className="muted" style={{ textAlign: 'center', marginTop: -8 }}>
-              Ordered by location, angle, and lens to minimize re-lighting and camera moves — not script order.
+              {t('shotListPage.groupedNote')}
             </p>
           )}
 
@@ -115,17 +117,17 @@ export default function ShotListPage() {
             <table className="shotlist-table">
               <thead>
                 <tr>
-                  <th>Shot No.</th>
-                  <th>Scene #</th>
-                  <th>Scene / Description</th>
-                  <th>Subject</th>
-                  <th>Camera Angle / Movement</th>
-                  <th>Lens</th>
-                  <th>Location</th>
-                  <th>Time of Day</th>
-                  <th>Equipment</th>
-                  <th>Talent / Props</th>
-                  <th>Composition / Setup Notes</th>
+                  <th>{t('shotListPage.columns.shotNo')}</th>
+                  <th>{t('shotListPage.columns.sceneNo')}</th>
+                  <th>{t('shotListPage.columns.sceneDescription')}</th>
+                  <th>{t('shotListPage.columns.subject')}</th>
+                  <th>{t('shotListPage.columns.cameraAngleMovement')}</th>
+                  <th>{t('shotListPage.columns.lens')}</th>
+                  <th>{t('shotListPage.columns.location')}</th>
+                  <th>{t('shotListPage.columns.timeOfDay')}</th>
+                  <th>{t('shotListPage.columns.equipment')}</th>
+                  <th>{t('shotListPage.columns.talentProps')}</th>
+                  <th>{t('shotListPage.columns.compositionSetupNotes')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +154,7 @@ export default function ShotListPage() {
                 {rows && rows.length === 0 && (
                   <tr>
                     <td colSpan={11} className="muted" style={{ textAlign: 'center', padding: '24px 0' }}>
-                      No shots yet. Add shots in the By Scene tab, or generate some with Create Shot List (AI).
+                      {t('shotListPage.noShotsYet')}
                     </td>
                   </tr>
                 )}

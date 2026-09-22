@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import api from '../api.js';
 import ScreenplayView from './ScreenplayView.jsx';
 import ShotList from './ShotList.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function SceneShotPanel({ scene, hasShots, onShotsChange }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [shots, setShots] = useState([]);
   const hasFormattedScript = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
@@ -44,9 +46,9 @@ export default function SceneShotPanel({ scene, hasShots, onShotsChange }) {
         </span>
         <span
           className={`readiness-badge ${hasShots ? 'ready' : 'pending'}`}
-          title={hasShots ? 'Shot list started' : 'No shots added yet'}
+          title={hasShots ? t('sceneShotPanel.readyTooltip') : t('sceneShotPanel.pendingTooltip')}
         >
-          Shot List
+          {t('sceneShotPanel.shotListLabel')}
         </span>
       </div>
 
@@ -61,7 +63,7 @@ export default function SceneShotPanel({ scene, hasShots, onShotsChange }) {
             />
           ) : (
             <div className="screenplay-view">
-              <p className="action">{scene.synopsis || 'No scene text captured yet.'}</p>
+              <p className="action">{scene.synopsis || t('sceneShotPanel.noSceneText')}</p>
             </div>
           )}
 

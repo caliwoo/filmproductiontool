@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import ImportProjectDialog from '../components/ImportProjectDialog.jsx';
+import LanguageToggle from '../components/LanguageToggle.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -58,29 +61,30 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="landing">
+    <div className="landing" style={{ position: 'relative' }}>
+      <LanguageToggle />
       <div className="landing-inner">
         <h1>OmniSlate</h1>
-        <p className="subtitle">Script breakdowns, shot lists, scheduling &amp; call sheets for your production.</p>
+        <p className="subtitle">{t('projects.subtitle')}</p>
 
         {error && <div className="error-banner">{error}</div>}
 
         <div className="flex-row" style={{ alignItems: 'flex-start', marginBottom: 32 }}>
           <form className="new-project-form" style={{ marginBottom: 0, flex: 1 }} onSubmit={handleCreate}>
             <input
-              placeholder="Project name (e.g. Midnight Runners)"
+              placeholder={t('projects.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <input
-              placeholder="Description (optional)"
+              placeholder={t('projects.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-            <button type="submit">New Project</button>
+            <button type="submit">{t('projects.newProject')}</button>
           </form>
           <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
-            Import from Script
+            {t('projects.importFromScript')}
           </button>
         </div>
 
@@ -100,7 +104,7 @@ export default function ProjectsPage() {
               <button
                 className="icon-btn project-card-delete"
                 onClick={() => setProjectToDelete(p)}
-                title="Delete project"
+                title={t('projects.deleteProjectTooltip')}
               >
                 ✕
               </button>
@@ -117,7 +121,7 @@ export default function ProjectsPage() {
                       if (e.key === 'Escape') setEditingProjectId(null);
                     }}
                   />
-                  <p>{p.description || 'No description'}</p>
+                  <p>{p.description || t('projects.noDescription')}</p>
                 </div>
               ) : (
                 <Link to={`/projects/${p.id}`} className="project-card-link">
@@ -125,7 +129,7 @@ export default function ProjectsPage() {
                     {p.name}
                     <button
                       className="icon-btn project-card-edit-btn"
-                      title="Rename project"
+                      title={t('projects.renameProjectTooltip')}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -135,20 +139,20 @@ export default function ProjectsPage() {
                       ✎
                     </button>
                   </h3>
-                  <p>{p.description || 'No description'}</p>
+                  <p>{p.description || t('projects.noDescription')}</p>
                 </Link>
               )}
             </div>
           ))}
-          {projects.length === 0 && <p className="empty-state">No projects yet. Create your first one above.</p>}
+          {projects.length === 0 && <p className="empty-state">{t('projects.noProjectsYet')}</p>}
         </div>
       </div>
 
       {projectToDelete && (
         <ConfirmDialog
-          title="Delete project?"
-          message={`This will permanently delete "${projectToDelete.name}" and everything in it — scenes, shots, schedule, contacts, and locations. This can't be undone.`}
-          confirmLabel="Delete Project"
+          title={t('projects.deleteProjectTitle')}
+          message={t('projects.deleteProjectMessage', { name: projectToDelete.name })}
+          confirmLabel={t('projects.deleteProjectConfirm')}
           onConfirm={confirmDelete}
           onCancel={() => setProjectToDelete(null)}
         />

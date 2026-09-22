@@ -4,8 +4,10 @@ import api from '../api.js';
 import SceneCard from '../components/SceneCard.jsx';
 import ScriptImportDialog from '../components/ScriptImportDialog.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function BreakdownPage() {
+  const { t } = useLanguage();
   const { projectId } = useOutletContext();
   const [scenes, setScenes] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -62,7 +64,12 @@ export default function BreakdownPage() {
     for (let i = 0; i < scenesNeedingBreakdown.length; i++) {
       const scene = scenesNeedingBreakdown[i];
       setBreakdownAllProgress(
-        `Scene ${i + 1} of ${scenesNeedingBreakdown.length}: ${scene.scene_number}. ${scene.heading || 'Untitled'}`
+        t('breakdownPage.breakdownAllProgress', {
+          index: i + 1,
+          total: scenesNeedingBreakdown.length,
+          sceneNumber: scene.scene_number,
+          heading: scene.heading || t('breakdownPage.untitled'),
+        })
       );
       const { candidates } = await api.post(`/scenes/${scene.id}/ai-tag`, {});
       if (candidates && candidates.length > 0) {
@@ -79,25 +86,25 @@ export default function BreakdownPage() {
   return (
     <div>
       <div className="page-header">
-        <h2>Script Breakdown</h2>
+        <h2>{t('breakdownPage.title')}</h2>
         <div className="flex-row">
           <span className="muted">
-            {scenes.length} scenes &middot; {totalPages.toFixed(1)} pages
+            {t('breakdownPage.scenesCount', { count: scenes.length, pages: totalPages.toFixed(1) })}
           </span>
           <button
             className="btn btn-secondary"
             disabled={scenesNeedingBreakdown.length === 0}
             title={
               scenesNeedingBreakdown.length === 0
-                ? 'Every scene already has at least one breakdown element'
-                : `Run AI Select for ${scenesNeedingBreakdown.length} scene${scenesNeedingBreakdown.length === 1 ? '' : 's'} without a breakdown yet`
+                ? t('breakdownPage.breakdownAllScenesReady')
+                : t('breakdownPage.breakdownAllScenesTooltip', { count: scenesNeedingBreakdown.length })
             }
             onClick={() => setShowBreakdownAll(true)}
           >
-            Breakdown All Scenes
+            {t('breakdownPage.breakdownAllScenes')}
           </button>
           <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
-            Import Script (PDF)
+            {t('breakdownPage.importScript')}
           </button>
         </div>
       </div>
@@ -116,10 +123,10 @@ export default function BreakdownPage() {
 
       {showBreakdownAll && (
         <ConfirmDialog
-          title="Breakdown all scenes?"
-          message={`This will run AI Select on every scene that doesn't have any breakdown elements yet (${scenesNeedingBreakdown.length} scene${scenesNeedingBreakdown.length === 1 ? '' : 's'}) and add whatever it suggests, without reviewing each one individually first. You can still edit or remove any element afterward.`}
-          confirmLabel="Breakdown All Scenes"
-          busyLabel="Breaking down..."
+          title={t('breakdownPage.breakdownAllTitle')}
+          message={t('breakdownPage.breakdownAllMessage', { count: scenesNeedingBreakdown.length })}
+          confirmLabel={t('breakdownPage.breakdownAllConfirm')}
+          busyLabel={t('breakdownPage.breakingDown')}
           progressMessage={breakdownAllProgress}
           danger={false}
           onConfirm={handleBreakdownAll}
@@ -137,24 +144,27 @@ export default function BreakdownPage() {
         />
       ))}
 
-      {scenes.length === 0 && <p className="empty-state">No scenes yet. Add your first scene below.</p>}
+      {scenes.length === 0 && <p className="empty-state">{t('breakdownPage.noScenesYet')}</p>}
 
       <form className="inline-form" onSubmit={handleAddScene}>
         <input
-          placeholder="Scene # (optional, auto-increments)"
+          placeholder={t('breakdownPage.addScenePlaceholder')}
           value={newSceneNumber}
           onChange={(e) => setNewSceneNumber(e.target.value)}
         />
         <button type="submit" className="btn">
-          + Add Scene
+          {t('breakdownPage.addSceneButton')}
         </button>
       </form>
 
       {sceneToDelete && (
         <ConfirmDialog
-          title="Delete scene?"
-          message={`This will permanently delete Scene ${sceneToDelete.scene_number} (${sceneToDelete.heading || 'untitled'}), along with its tagged elements and shot list. This can't be undone.`}
-          confirmLabel="Delete Scene"
+          title={t('breakdownPage.deleteSceneTitle')}
+          message={t('breakdownPage.deleteSceneMessage', {
+            number: sceneToDelete.scene_number,
+            heading: sceneToDelete.heading || t('breakdownPage.untitledLower'),
+          })}
+          confirmLabel={t('breakdownPage.deleteSceneConfirm')}
           onConfirm={confirmDeleteScene}
           onCancel={() => setSceneToDelete(null)}
         />

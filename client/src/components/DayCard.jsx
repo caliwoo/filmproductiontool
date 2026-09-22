@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import PageLengthInput from './PageLengthInput.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function DayCard({
   day,
@@ -18,6 +19,7 @@ export default function DayCard({
   onStartDayDrag,
   onStartSceneDrag,
 }) {
+  const { t } = useLanguage();
   const [sceneToAdd, setSceneToAdd] = useState('');
   const [error, setError] = useState('');
 
@@ -80,7 +82,7 @@ export default function DayCard({
         <div className="flex-row" style={{ alignItems: 'flex-start', gap: 10 }}>
           <span
             className="drag-handle"
-            title="Drag to reorder days"
+            title={t('dayCard.dragReorderDaysTooltip')}
             onMouseDown={(e) => {
               e.preventDefault();
               onStartDayDrag(e.clientX, e.clientY);
@@ -89,17 +91,17 @@ export default function DayCard({
             ⠿
           </span>
           <div>
-            <h3>Day {dayNumber}</h3>
+            <h3>{t('dayCard.dayLabel', { number: dayNumber })}</h3>
             <div className="day-meta">
-              {day.shoot_date || 'No date set'} &middot; Call {day.general_call_time || '—'}
+              {day.shoot_date || t('dayCard.noDateSet')} &middot; {t('dayCard.call')} {day.general_call_time || '—'}
             </div>
           </div>
         </div>
         <div className="flex-row">
           <Link className="btn btn-secondary" to={`${day.id}/call-sheet`}>
-            View Call Sheet
+            {t('dayCard.viewCallSheet')}
           </Link>
-          <button className="icon-btn" onClick={() => onDelete(day.id)} title="Delete day">
+          <button className="icon-btn" onClick={() => onDelete(day.id)} title={t('dayCard.deleteDayTooltip')}>
             ✕
           </button>
         </div>
@@ -119,25 +121,25 @@ export default function DayCard({
           onBlur={(e) => updateField('general_call_time', e.target.value)}
         />
         <input
-          placeholder="Weather"
+          placeholder={t('dayCard.weatherPlaceholder')}
           defaultValue={day.weather}
           onBlur={(e) => updateField('weather', e.target.value)}
         />
       </div>
 
-      <div className="section-label">Scenes on this day</div>
+      <div className="section-label">{t('dayCard.scenesOnThisDay')}</div>
       {assigned.length > 0 && (
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
                 <th></th>
-                <th>#</th>
-                <th>Scene Setting</th>
-                <th>Cast ID</th>
-                <th>Pages</th>
-                <th>Estimation, h</th>
-                <th>Location</th>
+                <th>{t('dayCard.columns.number')}</th>
+                <th>{t('dayCard.columns.sceneSetting')}</th>
+                <th>{t('dayCard.columns.castId')}</th>
+                <th>{t('dayCard.columns.pages')}</th>
+                <th>{t('dayCard.columns.estimationHours')}</th>
+                <th>{t('dayCard.columns.location')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -153,7 +155,7 @@ export default function DayCard({
                   <td>
                     <span
                       className="drag-handle"
-                      title="Drag to reorder, or drop on another day"
+                      title={t('dayCard.dragReorderSceneTooltip')}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         onStartSceneDrag(
@@ -209,11 +211,11 @@ export default function DayCard({
           </table>
         </div>
       )}
-      {assigned.length === 0 && <p className="muted">No scenes assigned yet.</p>}
+      {assigned.length === 0 && <p className="muted">{t('dayCard.noScenesAssigned')}</p>}
 
       <form className="inline-form" onSubmit={handleAssign}>
         <select value={sceneToAdd} onChange={(e) => setSceneToAdd(e.target.value)}>
-          <option value="">Add a scene...</option>
+          <option value="">{t('dayCard.addSceneOption')}</option>
           {available.map((s) => (
             <option key={s.id} value={s.id}>
               {s.scene_number}. {s.heading}
@@ -221,7 +223,7 @@ export default function DayCard({
           ))}
         </select>
         <button type="submit" className="btn btn-secondary">
-          Assign
+          {t('dayCard.assign')}
         </button>
       </form>
     </div>

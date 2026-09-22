@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import PageLengthInput from './PageLengthInput.jsx';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ScriptSceneReviewTable({ scenes, onUpdateScene, onToggleAll }) {
+  const { t } = useLanguage();
   const selectAllRef = useRef(null);
   const includedCount = scenes.filter((s) => s.include).length;
   const allSelected = includedCount === scenes.length;
@@ -21,16 +23,16 @@ export default function ScriptSceneReviewTable({ scenes, onUpdateScene, onToggle
               ref={selectAllRef}
               type="checkbox"
               checked={allSelected}
-              title={allSelected ? 'Deselect all scenes' : 'Select all scenes'}
+              title={allSelected ? t('scriptSceneReviewTable.deselectAll') : t('scriptSceneReviewTable.selectAll')}
               onChange={(e) => onToggleAll(e.target.checked)}
             />
           </th>
-          <th>#</th>
-          <th>Type</th>
-          <th>Time</th>
-          <th>Heading</th>
-          <th>Length</th>
-          <th>Synopsis</th>
+          <th>{t('scriptSceneReviewTable.number')}</th>
+          <th>{t('scriptSceneReviewTable.type')}</th>
+          <th>{t('scriptSceneReviewTable.time')}</th>
+          <th>{t('scriptSceneReviewTable.heading')}</th>
+          <th>{t('scriptSceneReviewTable.length')}</th>
+          <th>{t('scriptSceneReviewTable.synopsis')}</th>
         </tr>
       </thead>
       <tbody>
