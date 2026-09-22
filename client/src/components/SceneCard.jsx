@@ -63,15 +63,6 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
     }
   }
 
-  async function renameLocation(locationId, name) {
-    try {
-      await api.put(`/locations/${locationId}`, { name });
-      onChange();
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   return (
     <div className="scene-card">
       <div className="scene-header" onClick={() => setOpen(!open)}>
@@ -170,17 +161,6 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
                 </option>
               ))}
             </select>
-            {location && (
-              <input
-                key={`loc-name-${location.id}`}
-                placeholder={
-                  location.scene_heading ? `Real location name (script: "${location.scene_heading}")` : 'Real location name'
-                }
-                style={{ flex: 1 }}
-                defaultValue={location.name}
-                onBlur={(e) => e.target.value !== location.name && renameLocation(location.id, e.target.value)}
-              />
-            )}
             {!showNewLocation ? (
               <button
                 type="button"
