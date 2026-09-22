@@ -60,7 +60,7 @@ export default function ProjectsPage() {
   return (
     <div className="landing">
       <div className="landing-inner">
-        <h1>Reelboard</h1>
+        <h1>OmniSlate</h1>
         <p className="subtitle">Script breakdowns, shot lists, scheduling &amp; call sheets for your production.</p>
 
         {error && <div className="error-banner">{error}</div>}

@@ -1,4 +1,4 @@
-# Reelboard
+# OmniSlate
 
 A film/video production management tool inspired by StudioBinder — script breakdown, shot lists, shooting schedule, and call sheets, all tied to a project.
 

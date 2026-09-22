@@ -42,7 +42,7 @@ export default function ProjectLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
-          Reelboard
+          OmniSlate
         </Link>
         {editingName ? (
           <input
