@@ -71,10 +71,10 @@ export default function LocationsPage() {
         <table>
           <thead>
             <tr>
+              <th>Name</th>
               <th title="The set description auto-detected from the script's scene heading, e.g. &quot;APARTMENT&quot; -- not this location's real name">
                 Scene Heading
               </th>
-              <th>Name</th>
               <th>Address</th>
               <th>Notes</th>
               <th title="Scenes tagged with this location, in script order">Scenes</th>
@@ -84,7 +84,6 @@ export default function LocationsPage() {
           <tbody>
             {locations.map((l) => (
               <tr key={l.id}>
-                <td className="muted">{l.scene_heading || '—'}</td>
                 <td>
                   <input
                     defaultValue={l.name}
@@ -92,6 +91,7 @@ export default function LocationsPage() {
                     onBlur={(e) => e.target.value !== l.name && updateLocation(l.id, 'name', e.target.value)}
                   />
                 </td>
+                <td className="muted">{l.scene_heading || '—'}</td>
                 <td>
                   <input
                     defaultValue={l.address}
