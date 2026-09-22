@@ -204,15 +204,17 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             </select>
             <select
               key={scene.location_id || 'none'}
-              defaultValue={scene.location_id || ''}
+              defaultValue={location && location.name ? scene.location_id : ''}
               onChange={(e) => updateField('location_id', e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">No location</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name || `(unnamed — ${l.scene_heading || 'no heading'})`}
-                </option>
-              ))}
+              {locations
+                .filter((l) => l.name)
+                .map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
             </select>
             {!showNewLocation ? (
               <button
