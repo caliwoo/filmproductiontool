@@ -20,10 +20,13 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
   const [locationNameInput, setLocationNameInput] = useState('');
 
   const hasFormattedScript = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
-  const hasLocation = Boolean(scene.location_id);
   const hasBreakdown = Array.isArray(scene.elements) && scene.elements.length > 0;
 
   const location = locations.find((l) => l.id === scene.location_id);
+  // A location that's merely linked isn't "ready" until it has a real name --
+  // the auto-created placeholder from script import is just a bucket for the
+  // scene's set, not an actual scouted/booked location yet.
+  const hasLocation = Boolean(location && location.name);
 
   async function updateField(field, value) {
     try {
@@ -125,7 +128,9 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
             title={
               hasLocation
-                ? `Location: ${location && location.name ? location.name : 'selected, but not named yet'}`
+                ? `Location: ${location.name}`
+                : location
+                ? 'Location not named yet — click the pencil next to it above'
                 : 'No location selected yet'
             }
           >
@@ -205,7 +210,7 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
               <option value="">No location</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.name || '(unnamed)'}
+                  {l.name || `(unnamed — ${l.scene_heading || 'no heading'})`}
                 </option>
               ))}
             </select>
@@ -266,6 +271,11 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             <p className="muted" style={{ marginTop: 4 }}>
               No location selected — pick one above and it will automatically fill in on the call sheet and PDF
               breakdown sheet for this scene.
+            </p>
+          )}
+          {scene.location_id && !hasLocation && (
+            <p className="muted" style={{ marginTop: 4 }}>
+              This location doesn't have a real name yet — click the pencil next to it above to name it.
             </p>
           )}
 
