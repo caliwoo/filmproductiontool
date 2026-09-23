@@ -77,15 +77,36 @@ async function suggestSceneElements(scene, existingElements) {
     ? existingElements.map((e) => `- ${e.category}: ${e.value}`).join('\n')
     : '(none yet)';
 
+  // When the scene was PDF-imported, its text is already classified into
+  // action/character/parenthetical/dialogue/transition lines (script_elements).
+  // Labeling each line with its type -- the same structure aiShotLister.js
+  // already sends successfully -- removes the guesswork of telling a
+  // character cue from an action beat from plain flattened prose, which
+  // otherwise leaves the model to infer that structure itself from a long,
+  // unlabeled wall of text alone. Falls back to the flattened synopsis for
+  // scenes with no script_elements (hand-added scenes, or ones whose text
+  // was hand-edited after import).
+  const hasScriptElements = Array.isArray(scene.script_elements) && scene.script_elements.length > 0;
+  const body = hasScriptElements
+    ? scene.script_elements.map((el) => `(${el.type}) ${el.text}`).join('\n')
+    : scene.synopsis && scene.synopsis.trim()
+    ? scene.synopsis
+    : '';
+
   const sceneText = `SCENE ${scene.scene_number}. ${scene.int_ext} ${scene.heading} - ${scene.day_night}\n\n${
-    scene.synopsis && scene.synopsis.trim() ? scene.synopsis : '(no scene text captured — use the heading only)'
+    body || '(no scene text captured — use the heading only)'
   }\n\nAlready tagged for this scene:\n${existingList}`;
 
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
-    output_config: { effort: 'low' },
+    // 'low' effort trades thoroughness for cost -- fine for short scenes, but
+    // this is a manual, low-volume action (one click per scene, not a hot
+    // path), and a longer or denser scene is exactly the kind of case where
+    // low effort risks taking the system prompt's "no usable text -> empty
+    // list" escape hatch instead of doing the actual extraction work.
+    output_config: { effort: 'medium' },
     tools: [TAG_TOOL],
     tool_choice: { type: 'tool', name: 'tag_scene_elements' },
     messages: [{ role: 'user', content: sceneText }],
@@ -99,7 +120,10 @@ async function suggestSceneElements(scene, existingElements) {
   // "verbatim" quote just becomes no quote, falling back to matching on
   // value alone (same as a manually-tagged element) rather than showing a
   // wrong highlight.
-  const haystack = (scene.synopsis || '').toLowerCase();
+  const plainText = hasScriptElements
+    ? scene.script_elements.map((el) => el.text).join('\n')
+    : scene.synopsis || '';
+  const haystack = plainText.toLowerCase();
   return elements
     .filter((e) => e && e.category && e.value && e.value.trim() && !isDuplicate(existingElements, e.category, e.value))
     .map((e) => {

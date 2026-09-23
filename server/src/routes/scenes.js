@@ -171,7 +171,7 @@ router.post('/:sceneId/elements/bulk', (req, res) => {
 // --- AI Select: suggest breakdown elements from the scene text via Claude ---
 
 router.post('/:sceneId/ai-tag', async (req, res) => {
-  const scene = db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId);
+  const scene = withElements(db.prepare('SELECT * FROM scenes WHERE id = ?').get(req.params.sceneId));
   if (!scene) return res.status(404).json({ error: 'Scene not found' });
 
   const existing = db
