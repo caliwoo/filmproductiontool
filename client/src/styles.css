@@ -1129,6 +1129,18 @@ th {
   overflow: hidden;
 }
 
+/* Shot List's per-scene panel (SceneShotPanel) -- shares .scene-header/
+   .scene-body with the Script Breakdown scene row above, but stacks them
+   in a plain block card rather than the row layout .scene-card uses for
+   its stripboard number block, which this panel doesn't have. */
+.shot-scene-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
 .scene-number-block {
   width: 60px;
   flex: none;

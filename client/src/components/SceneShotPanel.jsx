@@ -39,7 +39,7 @@ export default function SceneShotPanel({ scene, hasShots, onShotsChange }) {
   }
 
   return (
-    <div className="scene-card">
+    <div className="shot-scene-panel">
       <div className="scene-header" onClick={() => setOpen(!open)}>
         <span className="scene-heading-text">
           {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
