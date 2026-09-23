@@ -112,6 +112,19 @@ async function suggestSceneElements(scene, existingElements) {
     messages: [{ role: 'user', content: sceneText }],
   });
 
+  // A safety-classifier refusal has no tool_use block at all -- without this
+  // check it looks identical to a deliberate "nothing to tag" empty result,
+  // which is actively misleading: the two need different messages (and
+  // different next steps) for the user.
+  if (response.stop_reason === 'refusal') {
+    const category = response.stop_details && response.stop_details.category;
+    const err = new Error(
+      `Claude declined to analyze this scene${category ? ` (safety category: ${category})` : ''}. This isn't the usual "no elements found" result -- try again, or edit the scene text if it contains something sensitive.`
+    );
+    err.refused = true;
+    throw err;
+  }
+
   const toolUse = response.content.find((b) => b.type === 'tool_use');
   const elements = (toolUse && toolUse.input && toolUse.input.elements) || [];
 

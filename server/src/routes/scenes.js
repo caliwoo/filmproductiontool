@@ -182,7 +182,7 @@ router.post('/:sceneId/ai-tag', async (req, res) => {
     const candidates = await suggestSceneElements(scene, existing);
     res.json({ candidates });
   } catch (err) {
-    res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
+    res.status(err.notConfigured ? 501 : err.refused ? 422 : 502).json({ error: err.message });
   }
 });
 
@@ -200,7 +200,7 @@ router.post('/:sceneId/ai-shots', async (req, res) => {
     const candidates = await suggestShots(scene, existing);
     res.json({ candidates, nextShotNumber: existing.length + 1 });
   } catch (err) {
-    res.status(err.notConfigured ? 501 : 502).json({ error: err.message });
+    res.status(err.notConfigured ? 501 : err.refused ? 422 : 502).json({ error: err.message });
   }
 });
 
