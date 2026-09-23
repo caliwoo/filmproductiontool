@@ -57,8 +57,7 @@ export default function ProjectLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
-          <span className="brand-mark" />
-          OmniSlate
+          <img src="/omnislate-logo.png" alt="OmniSlate" className="brand-logo" />
         </Link>
         {editingName ? (
           <input
@@ -115,7 +114,7 @@ export default function ProjectLayout() {
           <span className="mono-label">{t('nav.projectLabel')}</span>
           <span className="project-switcher-name">{project ? project.name : '...'}</span>
         </div>
-        <span className="brand-mark" />
+        <img src="/omnislate-icon.png" alt="OmniSlate" className="brand-mark" />
       </div>
 
       <main className="content">

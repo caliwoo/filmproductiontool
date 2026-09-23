@@ -116,23 +116,19 @@ button:focus {
   color: var(--text);
 }
 
+.brand-logo {
+  height: 22px;
+  width: auto;
+  flex: none;
+  display: block;
+}
+
 .brand-mark {
   width: 24px;
   height: 24px;
   flex: none;
-  border-radius: 6px;
-  background: var(--bg);
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--border-strong);
-  display: flex;
-  flex-direction: column;
-}
-
-.brand-mark::before {
-  content: '';
+  object-fit: contain;
   display: block;
-  height: 7px;
-  background: repeating-linear-gradient(135deg, var(--bg) 0 4px, var(--accent) 4px 8px);
 }
 
 .project-switcher {

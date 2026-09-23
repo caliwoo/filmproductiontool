@@ -143,8 +143,7 @@ export default function ProjectsPage() {
       <div className="landing-inner">
         <div className="landing-topbar">
           <span className="landing-brand">
-            <span className="brand-mark" />
-            OmniSlate
+            <img src="/omnislate-logo.png" alt="OmniSlate" className="brand-logo" />
           </span>
           <LanguageToggle />
         </div>
