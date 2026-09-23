@@ -65,9 +65,11 @@ export default {
     statCast: 'CAST',
     statShot: 'SHOT',
     breakdownProgress: 'Breakdown progress',
+    edited: 'Edited {{time}}',
     you: 'You',
     castCrewButton: 'Cast & crew',
     openProject: 'Open project',
+    switchToProject: 'Switch to project',
     quickLinksLabel: 'QUICK LINKS',
     quickShootingSchedule: 'Shooting schedule',
     quickShootDaysSet: '{{count}} shoot day(s) set',
@@ -77,6 +79,17 @@ export default {
     deleteProjectMessage:
       'This will permanently delete "{{name}}" and everything in it — scenes, shots, schedule, contacts, and locations. This can\'t be undone.',
     deleteProjectConfirm: 'Delete Project',
+  },
+
+  relativeTime: {
+    justNow: 'just now',
+    minutesAgo: { one: '1 minute ago', other: '{{count}} minutes ago' },
+    hoursAgo: { one: '1 hour ago', other: '{{count}} hours ago' },
+    yesterday: 'yesterday',
+    daysAgo: { one: '1 day ago', other: '{{count}} days ago' },
+    weeksAgo: { one: '1 week ago', other: '{{count}} weeks ago' },
+    monthsAgo: { one: '1 month ago', other: '{{count}} months ago' },
+    yearsAgo: { one: '1 year ago', other: '{{count}} years ago' },
   },
 
   importProjectDialog: {

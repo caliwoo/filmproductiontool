@@ -5,6 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import ImportProjectDialog from '../components/ImportProjectDialog.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
+import { formatRelativeTime } from '../relativeTime.js';
 
 function ScheduleIcon() {
   return (
@@ -22,40 +23,51 @@ function CastIcon() {
   );
 }
 
-// Real per-project stats for the featured card + quick links -- the design
-// reference used placeholder values here, but every number below is fetched
-// from this project's own data.
-function useFeaturedStats(project) {
-  const [stats, setStats] = useState(null);
+function ClapperIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8.5l1.3-4h3.6l-1.3 4M8.6 8.5l1.3-4h3.6l-1.3 4M14.2 8.5l1.3-4h3.6l-1.3 4M3 8.5h18V19a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19V8.5z" />
+    </svg>
+  );
+}
+
+// Real per-project stats for the featured card, other-project status pills,
+// and quick links -- the design reference used placeholder values here, but
+// every number below is fetched from each project's own data.
+function useStatsByProject(projects) {
+  const [statsById, setStatsById] = useState({});
 
   useEffect(() => {
-    if (!project) {
-      setStats(null);
-      return;
-    }
-    Promise.all([
-      api.get(`/scenes?projectId=${project.id}`),
-      api.get(`/contacts?projectId=${project.id}`),
-      api.get(`/shoot-days?projectId=${project.id}`),
-    ]).then(([scenes, contacts, days]) => {
-      const castCount = contacts.filter((c) => c.department === 'cast').length;
-      const crewCount = contacts.length - castCount;
-      const shotCount = scenes.filter((s) => s.status === 'shot').length;
-      const bdCount = scenes.filter((s) => s.elements && s.elements.length > 0).length;
-      const totalPages = scenes.reduce((sum, s) => sum + Number(s.page_count || 0), 0);
-      setStats({
-        sceneCount: scenes.length,
-        totalPages,
-        castCount,
-        crewCount,
-        shotCount,
-        bdCount,
-        dayCount: days.length,
-      });
-    });
-  }, [project]);
+    if (projects.length === 0) return;
+    Promise.all(
+      projects.map((p) =>
+        Promise.all([
+          api.get(`/scenes?projectId=${p.id}`),
+          api.get(`/contacts?projectId=${p.id}`),
+          api.get(`/shoot-days?projectId=${p.id}`),
+        ]).then(([scenes, contacts, days]) => {
+          const castCount = contacts.filter((c) => c.department === 'cast').length;
+          const crewCount = contacts.length - castCount;
+          const shotCount = scenes.filter((s) => s.status === 'shot').length;
+          const bdCount = scenes.filter((s) => s.elements && s.elements.length > 0).length;
+          const totalPages = scenes.reduce((sum, s) => sum + Number(s.page_count || 0), 0);
+          return [
+            p.id,
+            { sceneCount: scenes.length, totalPages, castCount, crewCount, shotCount, bdCount, dayCount: days.length },
+          ];
+        })
+      )
+    ).then((entries) => setStatsById(Object.fromEntries(entries)));
+  }, [projects]);
 
-  return stats;
+  return statsById;
+}
+
+function computeStatus(stats, t) {
+  if (!stats || stats.sceneCount === 0) return { label: t('projects.statusNew'), tone: 'new' };
+  if (stats.shotCount === stats.sceneCount) return { label: t('projects.statusWrapped'), tone: 'done' };
+  if (stats.bdCount > 0 || stats.shotCount > 0) return { label: t('projects.statusInProduction'), tone: 'active' };
+  return { label: t('projects.statusPreProduction'), tone: 'pre' };
 }
 
 export default function ProjectsPage() {
@@ -79,7 +91,8 @@ export default function ProjectsPage() {
 
   const featured = projects[0] || null;
   const others = projects.slice(1);
-  const stats = useFeaturedStats(featured);
+  const statsById = useStatsByProject(projects);
+  const stats = featured ? statsById[featured.id] : null;
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -123,13 +136,7 @@ export default function ProjectsPage() {
     .toUpperCase();
 
   const bdPct = stats && stats.sceneCount ? Math.round((stats.bdCount / stats.sceneCount) * 100) : 0;
-  const status = !stats || stats.sceneCount === 0
-    ? t('projects.statusNew')
-    : stats.shotCount === stats.sceneCount
-    ? t('projects.statusWrapped')
-    : stats.bdCount > 0 || stats.shotCount > 0
-    ? t('projects.statusInProduction')
-    : t('projects.statusPreProduction');
+  const featuredStatus = computeStatus(stats, t);
 
   return (
     <div className="landing">
@@ -208,10 +215,11 @@ export default function ProjectsPage() {
                   <div className="flex-row" style={{ alignItems: 'flex-start', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div className="flex-row" style={{ flexWrap: 'wrap' }}>
-                        <span className="status-pill">
+                        <span className={`status-pill tone-${featuredStatus.tone}`}>
                           <span className="status-pill-dot" />
-                          {status}
+                          {featuredStatus.label}
                         </span>
+                        <span className="muted">{t('projects.edited', { time: formatRelativeTime(featured.updated_at, t) })}</span>
                       </div>
                       <h2 className="featured-title">{featured.name}</h2>
                       <span className="featured-desc">{featured.description || t('projects.noDescriptionYet')}</span>
@@ -290,51 +298,69 @@ export default function ProjectsPage() {
               <>
                 <span className="mono-label other-projects-label">{t('projects.otherProjects')}</span>
                 <div className="other-projects-grid">
-                  {others.map((p) => (
-                    <div className="project-card" key={p.id}>
-                      <button
-                        className="icon-btn project-card-delete"
-                        onClick={() => setProjectToDelete(p)}
-                        title={t('projects.deleteProjectTooltip')}
-                      >
-                        ✕
-                      </button>
-                      {editingProjectId === p.id ? (
-                        <div className="project-card-link">
-                          <input
-                            className="project-card-name-input"
-                            autoFocus
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            onBlur={() => saveProjectName(p)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') e.target.blur();
-                              if (e.key === 'Escape') setEditingProjectId(null);
-                            }}
-                          />
-                          <p>{p.description || t('projects.noDescription')}</p>
+                  {others.map((p) => {
+                    const pStatus = computeStatus(statsById[p.id], t);
+                    const hasDescription = Boolean(p.description);
+                    return (
+                      <div className="project-card" key={p.id}>
+                        <div className="project-card-top">
+                          <span className="project-card-icon">
+                            <ClapperIcon />
+                          </span>
+                          <div className="project-card-title-row">
+                            {editingProjectId === p.id ? (
+                              <input
+                                className="project-card-name-input"
+                                autoFocus
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onBlur={() => saveProjectName(p)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') e.target.blur();
+                                  if (e.key === 'Escape') setEditingProjectId(null);
+                                }}
+                              />
+                            ) : (
+                              <h3 title={p.name}>{p.name}</h3>
+                            )}
+                            <div className="project-card-actions">
+                              <button
+                                className="icon-btn"
+                                title={t('projects.renameProjectTooltip')}
+                                onClick={() => startEditingProject(p)}
+                              >
+                                ✎
+                              </button>
+                              <button
+                                className="icon-btn"
+                                title={t('projects.deleteProjectTooltip')}
+                                onClick={() => setProjectToDelete(p)}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <Link to={`/projects/${p.id}`} className="project-card-link">
-                          <h3>
-                            {p.name}
-                            <button
-                              className="icon-btn project-card-edit-btn"
-                              title={t('projects.renameProjectTooltip')}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                startEditingProject(p);
-                              }}
-                            >
-                              ✎
-                            </button>
-                          </h3>
-                          <p>{p.description || t('projects.noDescription')}</p>
-                        </Link>
-                      )}
-                    </div>
-                  ))}
+                        <span className="project-card-edited">
+                          {t('projects.edited', { time: formatRelativeTime(p.updated_at, t) })}
+                        </span>
+                        <p className={`project-card-desc${hasDescription ? '' : ' empty'}`}>
+                          {p.description || t('projects.noDescription')}
+                        </p>
+                        <div className="project-card-footer">
+                          <span className={`status-pill tone-${pStatus.tone}`} style={{ height: 22, fontSize: 11.5 }}>
+                            {pStatus.label}
+                          </span>
+                          <Link to={`/projects/${p.id}`} className="project-card-switch">
+                            {t('projects.switchToProject')}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 6l6 6-6 6" />
+                            </svg>
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}

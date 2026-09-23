@@ -179,6 +179,116 @@ if (!sceneColumns.includes('script_elements')) {
   db.exec('ALTER TABLE scenes ADD COLUMN script_elements TEXT');
 }
 
+const projectColumns = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
+if (!projectColumns.includes('updated_at')) {
+  // Real last-edited time for the project, kept current by the touch
+  // triggers below whenever the project or anything inside it changes --
+  // not just renames. Seeded from created_at so existing projects show a
+  // sensible time immediately after this migration runs, instead of every
+  // one suddenly reading "just now".
+  db.exec('ALTER TABLE projects ADD COLUMN updated_at TEXT');
+  db.exec('UPDATE projects SET updated_at = created_at WHERE updated_at IS NULL');
+}
+
+// Keeps projects.updated_at current as a real "last edited" time whenever
+// the project itself or anything that belongs to it changes -- scenes,
+// tagged elements, shots, cast/crew, locations, or the shoot schedule.
+// Triggers (rather than touching every route handler) so no future
+// mutation path can forget to bump it.
+db.exec(`
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scenes_ins AFTER INSERT ON scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scenes_upd AFTER UPDATE ON scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scenes_del AFTER DELETE ON scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = OLD.project_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_contacts_ins AFTER INSERT ON contacts BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_contacts_upd AFTER UPDATE ON contacts BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_contacts_del AFTER DELETE ON contacts BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = OLD.project_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_locations_ins AFTER INSERT ON locations BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_locations_upd AFTER UPDATE ON locations BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_locations_del AFTER DELETE ON locations BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = OLD.project_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_days_ins AFTER INSERT ON shoot_days BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_days_upd AFTER UPDATE ON shoot_days BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = NEW.project_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_days_del AFTER DELETE ON shoot_days BEGIN
+  UPDATE projects SET updated_at = datetime('now') WHERE id = OLD.project_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scene_elements_ins AFTER INSERT ON scene_elements BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = NEW.scene_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scene_elements_upd AFTER UPDATE ON scene_elements BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = NEW.scene_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_scene_elements_del AFTER DELETE ON scene_elements BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = OLD.scene_id);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shots_ins AFTER INSERT ON shots BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = NEW.scene_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shots_upd AFTER UPDATE ON shots BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = NEW.scene_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shots_del AFTER DELETE ON shots BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM scenes WHERE id = OLD.scene_id);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_scenes_ins AFTER INSERT ON shoot_day_scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = NEW.shoot_day_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_scenes_upd AFTER UPDATE ON shoot_day_scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = NEW.shoot_day_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_scenes_del AFTER DELETE ON shoot_day_scenes BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = OLD.shoot_day_id);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_calls_ins AFTER INSERT ON shoot_day_calls BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = NEW.shoot_day_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_calls_upd AFTER UPDATE ON shoot_day_calls BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = NEW.shoot_day_id);
+END;
+CREATE TRIGGER IF NOT EXISTS trg_touch_project_shoot_day_calls_del AFTER DELETE ON shoot_day_calls BEGIN
+  UPDATE projects SET updated_at = datetime('now')
+  WHERE id = (SELECT project_id FROM shoot_days WHERE id = OLD.shoot_day_id);
+END;
+`);
+
 migrateCastNameToRole(db);
 backfillCastContacts(db);
 migrateHeadingNamesToSceneHeading(db);

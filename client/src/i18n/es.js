@@ -64,9 +64,11 @@ export default {
     statCast: 'ELENCO',
     statShot: 'FILMADO',
     breakdownProgress: 'Progreso de desglose',
+    edited: 'Editado {{time}}',
     you: 'Tú',
     castCrewButton: 'Elenco y equipo',
     openProject: 'Abrir proyecto',
+    switchToProject: 'Cambiar al proyecto',
     quickLinksLabel: 'ENLACES RÁPIDOS',
     quickShootingSchedule: 'Calendario de rodaje',
     quickShootDaysSet: '{{count}} día(s) de rodaje definidos',
@@ -76,6 +78,17 @@ export default {
     deleteProjectMessage:
       'Esto eliminará permanentemente "{{name}}" y todo lo que contiene — escenas, tomas, calendario, contactos y locaciones. Esta acción no se puede deshacer.',
     deleteProjectConfirm: 'Eliminar Proyecto',
+  },
+
+  relativeTime: {
+    justNow: 'justo ahora',
+    minutesAgo: { one: 'hace 1 minuto', other: 'hace {{count}} minutos' },
+    hoursAgo: { one: 'hace 1 hora', other: 'hace {{count}} horas' },
+    yesterday: 'ayer',
+    daysAgo: { one: 'hace 1 día', other: 'hace {{count}} días' },
+    weeksAgo: { one: 'hace 1 semana', other: 'hace {{count}} semanas' },
+    monthsAgo: { one: 'hace 1 mes', other: 'hace {{count}} meses' },
+    yearsAgo: { one: 'hace 1 año', other: 'hace {{count}} años' },
   },
 
   importProjectDialog: {
