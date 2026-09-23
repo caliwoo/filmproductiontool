@@ -107,6 +107,24 @@ function classifyBodyLines(lines) {
     elements.push({ type: x === null ? 'action' : 'dialogue', text });
   });
 
+  // A real character cue is always followed by that character's own
+  // parenthetical or dialogue -- that's the entire grammatical point of one.
+  // A "character"-shaped line (short, all-caps, unpunctuated) with anything
+  // else right after it -- action, another cue, a transition, or the end of
+  // the scene -- is never actually introducing speech. It's almost always
+  // page-break noise the PDF text extraction pulled in from a running
+  // header/footer (a title or act label repeated on every page), which
+  // otherwise sits in the middle of a scene as a bogus character cue with no
+  // dialogue and can derail anything reading the scene as a whole (e.g. the
+  // AI shot lister, which is handed the classified line types verbatim).
+  elements.forEach((el, i) => {
+    if (el.type !== 'character') return;
+    const next = elements[i + 1];
+    if (!next || (next.type !== 'dialogue' && next.type !== 'parenthetical')) {
+      el.type = 'action';
+    }
+  });
+
   return elements;
 }
 

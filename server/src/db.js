@@ -7,6 +7,7 @@ const {
   migrateHeadingNamesToSceneHeading,
   deleteOrphanedPlaceholders,
 } = require('./locationSync');
+const { fixOrphanedCharacterCues } = require('./scriptElementsSync');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -294,5 +295,6 @@ backfillCastContacts(db);
 migrateHeadingNamesToSceneHeading(db);
 backfillSceneLocations(db);
 deleteOrphanedPlaceholders(db);
+fixOrphanedCharacterCues(db);
 
 module.exports = db;
