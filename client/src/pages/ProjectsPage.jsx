@@ -6,12 +6,65 @@ import ImportProjectDialog from '../components/ImportProjectDialog.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
 
+function ScheduleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5" />
+    </svg>
+  );
+}
+
+function CastIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14.5c1.8.9 3 2.9 3 5.5" />
+    </svg>
+  );
+}
+
+// Real per-project stats for the featured card + quick links -- the design
+// reference used placeholder values here, but every number below is fetched
+// from this project's own data.
+function useFeaturedStats(project) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    if (!project) {
+      setStats(null);
+      return;
+    }
+    Promise.all([
+      api.get(`/scenes?projectId=${project.id}`),
+      api.get(`/contacts?projectId=${project.id}`),
+      api.get(`/shoot-days?projectId=${project.id}`),
+    ]).then(([scenes, contacts, days]) => {
+      const castCount = contacts.filter((c) => c.department === 'cast').length;
+      const crewCount = contacts.length - castCount;
+      const shotCount = scenes.filter((s) => s.status === 'shot').length;
+      const bdCount = scenes.filter((s) => s.elements && s.elements.length > 0).length;
+      const totalPages = scenes.reduce((sum, s) => sum + Number(s.page_count || 0), 0);
+      setStats({
+        sceneCount: scenes.length,
+        totalPages,
+        castCount,
+        crewCount,
+        shotCount,
+        bdCount,
+        dayCount: days.length,
+      });
+    });
+  }, [project]);
+
+  return stats;
+}
+
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState('');
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -24,6 +77,10 @@ export default function ProjectsPage() {
 
   useEffect(load, []);
 
+  const featured = projects[0] || null;
+  const others = projects.slice(1);
+  const stats = useFeaturedStats(featured);
+
   async function handleCreate(e) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -31,6 +88,7 @@ export default function ProjectsPage() {
       await api.post('/projects', { name, description });
       setName('');
       setDescription('');
+      setShowCreate(false);
       load();
     } catch (err) {
       setError(err.message);
@@ -60,18 +118,57 @@ export default function ProjectsPage() {
     }
   }
 
+  const todayLabel = new Date()
+    .toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    .toUpperCase();
+
+  const bdPct = stats && stats.sceneCount ? Math.round((stats.bdCount / stats.sceneCount) * 100) : 0;
+  const status = !stats || stats.sceneCount === 0
+    ? t('projects.statusNew')
+    : stats.shotCount === stats.sceneCount
+    ? t('projects.statusWrapped')
+    : stats.bdCount > 0 || stats.shotCount > 0
+    ? t('projects.statusInProduction')
+    : t('projects.statusPreProduction');
+
   return (
-    <div className="landing" style={{ position: 'relative' }}>
-      <LanguageToggle />
+    <div className="landing">
       <div className="landing-inner">
-        <h1>OmniSlate</h1>
-        <p className="subtitle">{t('projects.subtitle')}</p>
+        <div className="landing-topbar">
+          <span className="landing-brand">
+            <span className="brand-mark" />
+            OmniSlate
+          </span>
+          <LanguageToggle />
+        </div>
 
         {error && <div className="error-banner">{error}</div>}
 
-        <div className="flex-row" style={{ alignItems: 'flex-start', marginBottom: 32 }}>
-          <form className="new-project-form" style={{ marginBottom: 0, flex: 1 }} onSubmit={handleCreate}>
+        <div className="landing-hero">
+          <div>
+            <span className="subtitle">{todayLabel}</span>
+            <h1>{t('projects.welcomeBack')}</h1>
+          </div>
+          <div className="landing-actions">
+            <button className="btn" onClick={() => setShowCreate((v) => !v)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              {t('projects.newProject')}
+            </button>
+            <button className="btn-secondary" onClick={() => setShowImport(true)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 15V3M7 8l5-5 5 5M4 15v5h16v-5" />
+              </svg>
+              {t('projects.importFromScript')}
+            </button>
+          </div>
+        </div>
+
+        {showCreate && (
+          <form className="create-project-panel" onSubmit={handleCreate}>
             <input
+              autoFocus
               placeholder={t('projects.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -81,12 +178,16 @@ export default function ProjectsPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-            <button type="submit">{t('projects.newProject')}</button>
+            <div className="flex-row" style={{ flex: '1 1 auto' }}>
+              <button type="submit" className="btn" style={{ flex: 1 }}>
+                {t('projects.create')}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>
+                {t('projects.cancel')}
+              </button>
+            </div>
           </form>
-          <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
-            {t('projects.importFromScript')}
-          </button>
-        </div>
+        )}
 
         {showImport && (
           <ImportProjectDialog
@@ -98,53 +199,181 @@ export default function ProjectsPage() {
           />
         )}
 
-        <div className="project-grid">
-          {projects.map((p) => (
-            <div className="project-card" key={p.id}>
-              <button
-                className="icon-btn project-card-delete"
-                onClick={() => setProjectToDelete(p)}
-                title={t('projects.deleteProjectTooltip')}
-              >
-                ✕
-              </button>
-              {editingProjectId === p.id ? (
-                <div className="project-card-link">
-                  <input
-                    className="project-card-name-input"
-                    autoFocus
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onBlur={() => saveProjectName(p)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') e.target.blur();
-                      if (e.key === 'Escape') setEditingProjectId(null);
-                    }}
-                  />
-                  <p>{p.description || t('projects.noDescription')}</p>
-                </div>
-              ) : (
-                <Link to={`/projects/${p.id}`} className="project-card-link">
-                  <h3>
-                    {p.name}
+        <div className="landing-columns">
+          <div className="landing-main">
+            {featured && (
+              <div className="featured-card">
+                <div className="featured-card-stripe" />
+                <div className="featured-card-body">
+                  <div className="flex-row" style={{ alignItems: 'flex-start', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div className="flex-row" style={{ flexWrap: 'wrap' }}>
+                        <span className="status-pill">
+                          <span className="status-pill-dot" />
+                          {status}
+                        </span>
+                      </div>
+                      <h2 className="featured-title">{featured.name}</h2>
+                      <span className="featured-desc">{featured.description || t('projects.noDescriptionYet')}</span>
+                    </div>
                     <button
-                      className="icon-btn project-card-edit-btn"
-                      title={t('projects.renameProjectTooltip')}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        startEditingProject(p);
-                      }}
+                      className="icon-btn"
+                      title={t('projects.deleteProjectTooltip')}
+                      onClick={() => setProjectToDelete(featured)}
                     >
-                      ✎
+                      ✕
                     </button>
-                  </h3>
-                  <p>{p.description || t('projects.noDescription')}</p>
+                  </div>
+
+                  <div className="stat-strip">
+                    {[
+                      [t('projects.statScenes'), stats ? stats.sceneCount : '—'],
+                      [t('projects.statPages'), stats ? stats.totalPages.toFixed(1) : '—'],
+                      [t('projects.statCast'), stats ? stats.castCount : '—'],
+                      [t('projects.statShot'), stats ? `${stats.shotCount}/${stats.sceneCount}` : '—'],
+                    ].map(([label, value]) => (
+                      <div className="stat-cell" key={label}>
+                        <span className="mono-label">{label}</span>
+                        <span className="stat-cell-value">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="progress-row">
+                    <div className="progress-row-labels">
+                      <span>{t('projects.breakdownProgress')}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)' }}>{bdPct}%</span>
+                    </div>
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${bdPct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="featured-footer">
+                    <div className="flex-row">
+                      <span
+                        title={t('projects.you')}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          border: '2px solid var(--surface)',
+                          background: 'var(--accent)',
+                          color: 'var(--accent-text)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {t('projects.you').slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="featured-footer-actions">
+                      <button className="btn-secondary" onClick={() => navigate(`/projects/${featured.id}/contacts`)}>
+                        {t('projects.castCrewButton')}
+                      </button>
+                      <button className="btn" onClick={() => navigate(`/projects/${featured.id}/breakdown`)}>
+                        {t('projects.openProject')}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {others.length > 0 && (
+              <>
+                <span className="mono-label other-projects-label">{t('projects.otherProjects')}</span>
+                <div className="other-projects-grid">
+                  {others.map((p) => (
+                    <div className="project-card" key={p.id}>
+                      <button
+                        className="icon-btn project-card-delete"
+                        onClick={() => setProjectToDelete(p)}
+                        title={t('projects.deleteProjectTooltip')}
+                      >
+                        ✕
+                      </button>
+                      {editingProjectId === p.id ? (
+                        <div className="project-card-link">
+                          <input
+                            className="project-card-name-input"
+                            autoFocus
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => saveProjectName(p)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') e.target.blur();
+                              if (e.key === 'Escape') setEditingProjectId(null);
+                            }}
+                          />
+                          <p>{p.description || t('projects.noDescription')}</p>
+                        </div>
+                      ) : (
+                        <Link to={`/projects/${p.id}`} className="project-card-link">
+                          <h3>
+                            {p.name}
+                            <button
+                              className="icon-btn project-card-edit-btn"
+                              title={t('projects.renameProjectTooltip')}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                startEditingProject(p);
+                              }}
+                            >
+                              ✎
+                            </button>
+                          </h3>
+                          <p>{p.description || t('projects.noDescription')}</p>
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {projects.length === 0 && <p className="empty-state">{t('projects.noProjectsDashed')}</p>}
+          </div>
+
+          {featured && (
+            <div className="landing-side">
+              <div className="quick-links">
+                <span className="mono-label side-panel-label">{t('projects.quickLinksLabel')}</span>
+                <Link to={`/projects/${featured.id}/schedule`} className="quick-link">
+                  <span className="quick-link-icon" style={{ background: 'rgba(255,209,64,.14)', color: 'var(--warning)' }}>
+                    <ScheduleIcon />
+                  </span>
+                  <span className="quick-link-text">
+                    <span className="quick-link-text-label">{t('projects.quickShootingSchedule')}</span>
+                    <span className="quick-link-text-sub">
+                      {t('projects.quickShootDaysSet', { count: stats ? stats.dayCount : 0 })}
+                    </span>
+                  </span>
                 </Link>
-              )}
+                <Link to={`/projects/${featured.id}/contacts`} className="quick-link">
+                  <span className="quick-link-icon" style={{ background: 'rgba(239,168,202,.14)', color: 'var(--danger)' }}>
+                    <CastIcon />
+                  </span>
+                  <span className="quick-link-text">
+                    <span className="quick-link-text-label">{t('projects.quickCastCrew')}</span>
+                    <span className="quick-link-text-sub">
+                      {t('projects.quickCastCrewSub', {
+                        cast: stats ? stats.castCount : 0,
+                        crew: stats ? stats.crewCount : 0,
+                      })}
+                    </span>
+                  </span>
+                </Link>
+              </div>
             </div>
-          ))}
-          {projects.length === 0 && <p className="empty-state">{t('projects.noProjectsYet')}</p>}
+          )}
         </div>
       </div>
 

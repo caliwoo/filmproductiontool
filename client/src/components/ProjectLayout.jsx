@@ -40,10 +40,19 @@ export default function ProjectLayout() {
     }
   }
 
+  const navLinks = [
+    { to: 'breakdown', label: t('nav.breakdown'), short: t('nav.shortBreakdown') },
+    { to: 'shot-list', label: t('nav.shotList'), short: t('nav.shortShotList') },
+    { to: 'schedule', label: t('nav.schedule'), short: t('nav.shortSchedule') },
+    { to: 'contacts', label: t('nav.castCrew'), short: t('nav.shortCastCrew') },
+    { to: 'locations', label: t('nav.locations'), short: t('nav.shortLocations') },
+  ];
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
+          <span className="brand-mark" />
           OmniSlate
         </Link>
         {editingName ? (
@@ -59,40 +68,80 @@ export default function ProjectLayout() {
             }}
           />
         ) : (
-          <div className="project-name">
-            {project ? project.name : '...'}
+          <Link to="/" className="project-switcher">
+            <span className="project-switcher-label">
+              <span className="mono-label">{t('nav.projectLabel')}</span>
+              <span className="project-switcher-name">{project ? project.name : '...'}</span>
+            </span>
             {project && (
-              <button className="icon-btn project-name-edit-btn" title={t('nav.renameProjectTooltip')} onClick={startEditingName}>
+              <button
+                className="icon-btn project-name-edit-btn"
+                title={t('nav.renameProjectTooltip')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  startEditingName();
+                }}
+              >
                 ✎
               </button>
             )}
-          </div>
+          </Link>
         )}
         <nav className="nav">
-          <NavLink to="breakdown" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('nav.breakdown')}
-          </NavLink>
-          <NavLink to="shot-list" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('nav.shotList')}
-          </NavLink>
-          <NavLink to="schedule" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('nav.schedule')}
-          </NavLink>
-          <NavLink to="contacts" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('nav.castCrew')}
-          </NavLink>
-          <NavLink to="locations" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('nav.locations')}
-          </NavLink>
+          {navLinks.map((n) => (
+            <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? 'active' : '')}>
+              {n.label}
+            </NavLink>
+          ))}
         </nav>
         <Link to="/" className="all-projects-link">
           {t('nav.allProjects')}
         </Link>
+        <SidebarLanguageToggle />
       </aside>
+
+      <div className="mobile-topbar">
+        <Link to="/" className="mobile-topbar-back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </Link>
+        <div className="mobile-topbar-title">
+          <span className="mono-label">{t('nav.projectLabel')}</span>
+          <span className="project-switcher-name">{project ? project.name : '...'}</span>
+        </div>
+        <span className="brand-mark" />
+      </div>
+
       <main className="content">
-        {error && <div className="error-banner">{error}</div>}
-        <Outlet context={{ projectId, project }} />
+        <div className="content-inner">
+          {error && <div className="error-banner">{error}</div>}
+          <Outlet context={{ projectId, project }} />
+        </div>
       </main>
+
+      <nav className="mobile-bottomnav">
+        {navLinks.map((n) => (
+          <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span className="mobile-bottomnav-pill" />
+            {n.short}
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function SidebarLanguageToggle() {
+  const { lang, setLang, t } = useLanguage();
+  return (
+    <div className="sidebar-lang">
+      <button type="button" className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>
+        {t('languageToggle.english')}
+      </button>
+      <button type="button" className={lang === 'es' ? 'active' : ''} onClick={() => setLang('es')}>
+        {t('languageToggle.spanish')}
+      </button>
     </div>
   );
 }

@@ -12,6 +12,7 @@ export default function BreakdownPage() {
   const [scenes, setScenes] = useState([]);
   const [locations, setLocations] = useState([]);
   const [newSceneNumber, setNewSceneNumber] = useState('');
+  const [newSceneHeading, setNewSceneHeading] = useState('');
   const [error, setError] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [sceneToDelete, setSceneToDelete] = useState(null);
@@ -35,9 +36,15 @@ export default function BreakdownPage() {
   async function handleAddScene(e) {
     e.preventDefault();
     const nextNumber = newSceneNumber.trim() || String(scenes.length + 1);
+    const head = newSceneHeading.trim().toUpperCase();
+    const m = head.match(/^(INT\/EXT|INT|EXT)\.?\s*(.*?)(?:\s*[-—–]\s*(DAY|NIGHT|DAWN|DUSK|CONTINUOUS))?$/);
+    const int_ext = m ? m[1] : 'INT';
+    const heading = (m ? m[2] : head) || 'NEW SCENE';
+    const day_night = m && m[3] ? (m[3] === 'NIGHT' || m[3] === 'DUSK' ? 'NIGHT' : 'DAY') : 'DAY';
     try {
-      await api.post('/scenes', { project_id: projectId, scene_number: nextNumber, heading: 'NEW SCENE' });
+      await api.post('/scenes', { project_id: projectId, scene_number: nextNumber, heading, int_ext, day_night });
       setNewSceneNumber('');
+      setNewSceneHeading('');
       load();
     } catch (err) {
       setError(err.message);
@@ -88,7 +95,7 @@ export default function BreakdownPage() {
       <div className="page-header">
         <h2>{t('breakdownPage.title')}</h2>
         <div className="flex-row">
-          <span className="muted">
+          <span className="page-header-meta">
             {t('breakdownPage.scenesCount', { count: scenes.length, pages: totalPages.toFixed(1) })}
           </span>
           <button
@@ -149,13 +156,42 @@ export default function BreakdownPage() {
       <form className="inline-form" onSubmit={handleAddScene}>
         <input
           placeholder={t('breakdownPage.addScenePlaceholder')}
+          style={{ flex: '0 0 76px', fontFamily: 'var(--font-mono)' }}
           value={newSceneNumber}
           onChange={(e) => setNewSceneNumber(e.target.value)}
         />
+        <input
+          placeholder={t('breakdownPage.addSceneHeadingPlaceholder')}
+          style={{ flex: '1 1 200px', textTransform: 'uppercase' }}
+          value={newSceneHeading}
+          onChange={(e) => setNewSceneHeading(e.target.value)}
+        />
         <button type="submit" className="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           {t('breakdownPage.addSceneButton')}
         </button>
       </form>
+
+      <div className="legend">
+        <span className="legend-item">
+          <span className="legend-swatch" style={{ background: '#fff' }} />
+          {t('breakdownPage.legendIntDay')}
+        </span>
+        <span className="legend-item">
+          <span className="legend-swatch" style={{ background: 'var(--warning)' }} />
+          {t('breakdownPage.legendExtDay')}
+        </span>
+        <span className="legend-item">
+          <span className="legend-swatch" style={{ background: 'var(--text-muted)' }} />
+          {t('breakdownPage.legendIntNight')}
+        </span>
+        <span className="legend-item">
+          <span className="legend-swatch" style={{ background: 'var(--success)' }} />
+          {t('breakdownPage.legendExtNight')}
+        </span>
+      </div>
 
       {sceneToDelete && (
         <ConfirmDialog

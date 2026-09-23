@@ -96,99 +96,138 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
     }
   }
 
+  // Stripboard color band -- a quick, at-a-glance read of a scene's INT/EXT
+  // and DAY/NIGHT combination, the same convention an AD's stripboard uses.
+  const isNight = scene.day_night === 'NIGHT' || scene.day_night === 'DUSK';
+  const stripeColor = isNight
+    ? scene.int_ext === 'EXT'
+      ? 'var(--success)'
+      : 'var(--text-muted)'
+    : scene.int_ext === 'EXT'
+    ? 'var(--warning)'
+    : '#ffffff';
+  const okIcon = 'M5 12.5l4.5 4.5L19 7.5';
+  const pendingIcon = 'M12 7v5l3 2';
+
   return (
     <div className="scene-card">
-      <div className="scene-header" onClick={() => setOpen(!open)}>
-        <div>
-          <span className="scene-heading-text">
-            {scene.scene_number}. {scene.int_ext} {scene.heading} - {scene.day_night}
-          </span>
-          {location &&
-            (editingLocationName ? (
-              <input
-                autoFocus
-                className="scene-slug-input"
-                value={locationNameInput}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setLocationNameInput(e.target.value)}
-                onBlur={saveLocationName}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.target.blur();
-                  if (e.key === 'Escape') setEditingLocationName(false);
-                }}
-              />
-            ) : (
-              <span className="scene-slug">
-                {location.name || t('sceneCard.unnamed')}
-                <button
-                  className="icon-btn scene-slug-edit-btn"
-                  title={t('sceneCard.renameLocationTooltip')}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditingLocationName();
-                  }}
-                >
-                  ✎
-                </button>
-              </span>
-            ))}
-        </div>
-        <div className="flex-row">
-          <span
-            className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
-            title={
-              hasLocation
-                ? t('sceneCard.locationReadyTooltip', { name: location.name })
-                : location
-                ? t('sceneCard.locationUnnamedTooltip')
-                : t('sceneCard.locationNoneTooltip')
-            }
-          >
-            {t('sceneCard.locationBadge')}
-          </span>
-          <span
-            className={`readiness-badge ${hasBreakdown ? 'ready' : 'pending'}`}
-            title={
-              hasBreakdown
-                ? t('sceneCard.breakdownReadyTooltip', { count: scene.elements.length })
-                : t('sceneCard.breakdownPendingTooltip')
-            }
-          >
-            {t('sceneCard.breakdownBadge')}
-          </span>
-          <span className="muted" style={{ fontSize: 12 }} title="Script length">
-            {formatPageLength(scene.page_count)} {t('sceneCard.pagesSuffix')}
-          </span>
-          <span className={`badge ${scene.status}`}>{scene.status === 'shot' ? t('sceneCard.shot') : t('sceneCard.notShot')}</span>
-          <a
-            className="btn btn-secondary"
-            style={{
-              fontSize: 12,
-              padding: '5px 10px',
-              opacity: hasBreakdown ? 1 : 0.6,
-              pointerEvents: hasBreakdown ? 'auto' : 'none',
-            }}
-            href={hasBreakdown ? `/api/scenes/${scene.id}/breakdown-pdf` : undefined}
-            onClick={(e) => e.stopPropagation()}
-            title={hasBreakdown ? t('sceneCard.pdfBreakdownReadyTooltip') : t('sceneCard.pdfBreakdownPendingTooltip')}
-            aria-disabled={!hasBreakdown}
-          >
-            {t('sceneCard.pdfBreakdown')}
-          </a>
-          <button
-            className="icon-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(scene.id);
-            }}
-            title={t('sceneCard.deleteSceneTooltip')}
-          >
-            ✕
-          </button>
-        </div>
+      <div className="scene-number-block" style={{ '--stripe-color': stripeColor }}>
+        {scene.scene_number}
       </div>
+      <div className="scene-card-inner">
+        <div className="scene-header" onClick={() => setOpen(!open)}>
+          <div className="scene-meta-row">
+            <span className="scene-heading-text">
+              {scene.int_ext}. {scene.heading} - {scene.day_night}
+            </span>
+            <div className="scene-meta-line">
+              {location ? (
+                editingLocationName ? (
+                  <input
+                    autoFocus
+                    className="scene-slug-input"
+                    value={locationNameInput}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setLocationNameInput(e.target.value)}
+                    onBlur={saveLocationName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.target.blur();
+                      if (e.key === 'Escape') setEditingLocationName(false);
+                    }}
+                  />
+                ) : (
+                  <span className="scene-slug">
+                    {location.name || t('sceneCard.unnamed')}
+                    <button
+                      className="icon-btn scene-slug-edit-btn"
+                      title={t('sceneCard.renameLocationTooltip')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditingLocationName();
+                      }}
+                    >
+                      ✎
+                    </button>
+                  </span>
+                )
+              ) : (
+                <span className="scene-slug">{t('sceneCard.noSetAssigned')}</span>
+              )}
+              <span className="scene-pages">
+                {formatPageLength(scene.page_count)} {t('sceneCard.pagesSuffix')}
+              </span>
+            </div>
+          </div>
+          <div className="scene-actions">
+            <span
+              className={`readiness-badge ${hasLocation ? 'ready' : 'pending'}`}
+              title={
+                hasLocation
+                  ? t('sceneCard.locationReadyTooltip', { name: location.name })
+                  : location
+                  ? t('sceneCard.locationUnnamedTooltip')
+                  : t('sceneCard.locationNoneTooltip')
+              }
+            >
+              <svg className="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d={hasLocation ? okIcon : pendingIcon} />
+              </svg>
+              {t('sceneCard.locationBadge')}
+            </span>
+            <span
+              className={`readiness-badge ${hasBreakdown ? 'ready' : 'pending'}`}
+              title={
+                hasBreakdown
+                  ? t('sceneCard.breakdownReadyTooltip', { count: scene.elements.length })
+                  : t('sceneCard.breakdownPendingTooltip')
+              }
+            >
+              <svg className="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d={hasBreakdown ? okIcon : pendingIcon} />
+              </svg>
+              {t('sceneCard.breakdownBadge')}
+            </span>
+            <button
+              type="button"
+              className={`pill shot-toggle ${scene.status === 'shot' ? 'is-shot' : 'is-pending'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateField('status', scene.status === 'shot' ? 'not_shot' : 'shot');
+              }}
+            >
+              <span className="shot-toggle-dot" />
+              {scene.status === 'shot' ? t('sceneCard.shot') : t('sceneCard.notShot')}
+            </button>
+            <a
+              className="pdf-pill"
+              style={{
+                opacity: hasBreakdown ? 1 : 0.6,
+                pointerEvents: hasBreakdown ? 'auto' : 'none',
+              }}
+              href={hasBreakdown ? `/api/scenes/${scene.id}/breakdown-pdf` : undefined}
+              onClick={(e) => e.stopPropagation()}
+              title={hasBreakdown ? t('sceneCard.pdfBreakdownReadyTooltip') : t('sceneCard.pdfBreakdownPendingTooltip')}
+              aria-disabled={!hasBreakdown}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 3h7l5 5v13H7zM14 3v5h5" />
+              </svg>
+              {t('sceneCard.pdfBreakdown')}
+            </a>
+            <button
+              className="icon-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(scene.id);
+              }}
+              title={t('sceneCard.deleteSceneTooltip')}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
 
-      {open && (
+        {open && (
         <div className="scene-body">
           {error && <div className="error-banner">{error}</div>}
 
@@ -368,7 +407,8 @@ export default function SceneCard({ scene, locations, onChange, onDelete }) {
             </button>
           </form>
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

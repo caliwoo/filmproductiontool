@@ -152,7 +152,7 @@ export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
           {preview && (
             <>
               {existingDaysCount > 0 && (
-                <div className="error-banner" style={{ background: '#fef3c7', color: '#92400e' }}>
+                <div className="error-banner" style={{ background: 'rgba(255,209,64,.14)', color: 'var(--warning)' }}>
                   {t('buildScheduleDialog.existingDaysWarning', { count: existingDaysCount })}
                 </div>
               )}
