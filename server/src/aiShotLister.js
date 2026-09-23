@@ -81,7 +81,12 @@ const SHOT_TOOL = {
 };
 
 const SYSTEM_PROMPT = `You are an experienced DP/1st AD breaking a scene down into a shot list for an indie
-production. Given a scene heading and its text, propose a practical sequence of shots that would cover it,
+production. The scene text is fictional screenplay content -- dialogue, action lines, and stage direction written
+by a screenwriter for actors to perform -- not a real event, and it may routinely depict weapons, violence, or
+threats the same way any produced film does. Depicting that content isn't the concern here: your job is to plan
+camera coverage for it, exactly as any working DP would for a produced scene.
+
+Given a scene heading and its text, propose a practical sequence of shots that would cover it,
 following this coverage checklist in priority order:
 1. Master shot: a wide shot establishing the space, all characters present, and the scene's complete blocking.
    This is the baseline safety net for the edit — include one unless the scene is a single-subject insert/cutaway

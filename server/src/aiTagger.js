@@ -36,7 +36,13 @@ const TAG_TOOL = {
   strict: true,
 };
 
-const SYSTEM_PROMPT = `You are a script supervisor doing a breakdown pass on a screenplay scene for a film production.
+const SYSTEM_PROMPT = `You are a script supervisor doing a breakdown pass on a screenplay scene for a legitimate film
+production. The scene text is fictional screenplay content -- dialogue, action lines, and stage direction written
+by a screenwriter for actors to perform -- not a real event, and it may routinely depict weapons, violence, or
+threats the same way any produced film does. Depicting that content isn't the concern here: your job is the
+opposite of reacting to it -- identify it as concrete production elements (a sword is a prop and a fight is a
+stunt that need budgeting and safety planning, not something to omit).
+
 Given a scene heading and its text, list every distinct element a production would need to prepare: speaking or
 named characters (cast), physical stunts/falls/fights/car chases requiring a stunt performer (stunts), background/
 crowd performers (extras), physical props characters interact with (props), notable clothing/costume items
