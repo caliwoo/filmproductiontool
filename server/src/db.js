@@ -181,6 +181,18 @@ if (!sceneColumns.includes('script_elements')) {
 }
 
 const projectColumns = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
+if (!projectColumns.includes('work_days_per_week')) {
+  // Project-level default for the auto-scheduler's workweek choice, so it
+  // no longer resets to 5 every time Build Schedule is opened. Still
+  // overridable per-run in that dialog.
+  db.exec('ALTER TABLE projects ADD COLUMN work_days_per_week INTEGER NOT NULL DEFAULT 5');
+}
+if (!projectColumns.includes('schedule_rule_key')) {
+  // Project-level default union/guild rest-period rule (a SCHEDULE_RULES
+  // key, client/src/scheduleRules.js) shown in Build Schedule. NULL means
+  // "None / general reference only".
+  db.exec('ALTER TABLE projects ADD COLUMN schedule_rule_key TEXT');
+}
 if (!projectColumns.includes('updated_at')) {
   // Real last-edited time for the project, kept current by the touch
   // triggers below whenever the project or anything inside it changes --

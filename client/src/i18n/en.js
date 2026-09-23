@@ -36,6 +36,8 @@ export default {
     shortSchedule: 'Schedule',
     shortCastCrew: 'Cast',
     shortLocations: 'Places',
+    settings: 'Settings',
+    shortSettings: 'Settings',
     backToProjects: 'Back to projects',
     projectLabel: 'PROJECT',
   },
@@ -550,5 +552,14 @@ export default {
     wholePagesTooltip: 'Whole pages',
     eighthsTooltip: 'Eighths of a page',
     pagesSuffix: 'pgs',
+  },
+
+  settingsPage: {
+    title: 'Settings',
+    schedulingSection: 'Scheduling',
+    schedulingDescription:
+      "Set this project's default workweek and rest-period rule, used to prefill Build Shooting Schedule every time it's opened. You can still override either one for a single run there.",
+    savedNote: 'Saved.',
+    appliesNote: 'Applies as the default the next time you build a schedule for this project.',
   },
 };

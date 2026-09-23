@@ -12,11 +12,15 @@ export default function ProjectLayout() {
   const [nameInput, setNameInput] = useState('');
   const nameInputRef = useRef(null);
 
-  useEffect(() => {
-    api
+  function refreshProject() {
+    return api
       .get(`/projects/${projectId}`)
       .then(setProject)
       .catch((err) => setError(err.message));
+  }
+
+  useEffect(() => {
+    refreshProject();
   }, [projectId]);
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export default function ProjectLayout() {
     { to: 'schedule', label: t('nav.schedule'), short: t('nav.shortSchedule') },
     { to: 'contacts', label: t('nav.castCrew'), short: t('nav.shortCastCrew') },
     { to: 'locations', label: t('nav.locations'), short: t('nav.shortLocations') },
+    { to: 'settings', label: t('nav.settings'), short: t('nav.shortSettings') },
   ];
 
   return (
@@ -116,7 +121,7 @@ export default function ProjectLayout() {
       <main className="content">
         <div className="content-inner">
           {error && <div className="error-banner">{error}</div>}
-          <Outlet context={{ projectId, project }} />
+          <Outlet context={{ projectId, project, refreshProject }} />
         </div>
       </main>
 

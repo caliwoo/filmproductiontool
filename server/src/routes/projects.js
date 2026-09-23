@@ -31,12 +31,16 @@ router.post('/', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, work_days_per_week, schedule_rule_key } = req.body;
   const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Project not found' });
-  db.prepare("UPDATE projects SET name = ?, description = ?, updated_at = datetime('now') WHERE id = ?").run(
+  db.prepare(
+    "UPDATE projects SET name = ?, description = ?, work_days_per_week = ?, schedule_rule_key = ?, updated_at = datetime('now') WHERE id = ?"
+  ).run(
     name ?? existing.name,
     description ?? existing.description,
+    work_days_per_week === 6 ? 6 : work_days_per_week === 5 ? 5 : existing.work_days_per_week,
+    schedule_rule_key !== undefined ? schedule_rule_key || null : existing.schedule_rule_key,
     req.params.id
   );
   res.json(db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id));

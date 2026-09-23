@@ -9,7 +9,7 @@ import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function SchedulePage() {
   const { t } = useLanguage();
-  const { projectId } = useOutletContext();
+  const { projectId, project } = useOutletContext();
   const [days, setDays] = useState([]);
   const [assignmentsByDay, setAssignmentsByDay] = useState({});
   const [scenes, setScenes] = useState([]);
@@ -204,6 +204,7 @@ export default function SchedulePage() {
       {showBuildSchedule && (
         <BuildScheduleDialog
           projectId={projectId}
+          project={project}
           onClose={() => setShowBuildSchedule(false)}
           onApplied={() => {
             setShowBuildSchedule(false);

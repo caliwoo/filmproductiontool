@@ -7,6 +7,7 @@ import CallSheetPage from './pages/CallSheetPage.jsx';
 import ContactsPage from './pages/ContactsPage.jsx';
 import LocationsPage from './pages/LocationsPage.jsx';
 import ShotListPage from './pages/ShotListPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="schedule/:dayId/call-sheet" element={<CallSheetPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="locations" element={<LocationsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );

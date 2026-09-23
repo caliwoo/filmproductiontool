@@ -35,6 +35,8 @@ export default {
     shortSchedule: 'Calendario',
     shortCastCrew: 'Elenco',
     shortLocations: 'Lugares',
+    settings: 'Ajustes',
+    shortSettings: 'Ajustes',
     backToProjects: 'Volver a proyectos',
     projectLabel: 'PROYECTO',
   },
@@ -549,5 +551,14 @@ export default {
     wholePagesTooltip: 'Páginas completas',
     eighthsTooltip: 'Octavos de página',
     pagesSuffix: 'pgs',
+  },
+
+  settingsPage: {
+    title: 'Ajustes',
+    schedulingSection: 'Calendario',
+    schedulingDescription:
+      'Define la semana laboral y la regla de descanso predeterminadas de este proyecto, usadas para precargar Construir Calendario de Rodaje cada vez que se abre. Aun así puedes cambiar cualquiera de las dos para una ejecución puntual ahí.',
+    savedNote: 'Guardado.',
+    appliesNote: 'Se aplica como predeterminado la próxima vez que construyas un calendario para este proyecto.',
   },
 };

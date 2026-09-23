@@ -3,12 +3,12 @@ import api from '../api.js';
 import { SCHEDULE_RULES } from '../scheduleRules.js';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
 
-export default function BuildScheduleDialog({ projectId, onClose, onApplied }) {
+export default function BuildScheduleDialog({ projectId, project, onClose, onApplied }) {
   const { t } = useLanguage();
   const [pagesPerDay, setPagesPerDay] = useState(5);
   const [startDate, setStartDate] = useState('');
-  const [workDaysPerWeek, setWorkDaysPerWeek] = useState(5);
-  const [ruleKey, setRuleKey] = useState('');
+  const [workDaysPerWeek, setWorkDaysPerWeek] = useState(project?.work_days_per_week === 6 ? 6 : 5);
+  const [ruleKey, setRuleKey] = useState(project?.schedule_rule_key || '');
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [preview, setPreview] = useState(null);
