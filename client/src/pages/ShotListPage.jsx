@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api.js';
 import SceneShotPanel from '../components/SceneShotPanel.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function ShotListPage() {
@@ -13,6 +14,8 @@ export default function ShotListPage() {
   const [groupBySetup, setGroupBySetup] = useState(false);
   const [error, setError] = useState('');
   const [sceneIdsWithShots, setSceneIdsWithShots] = useState(new Set());
+  const [showCreateAll, setShowCreateAll] = useState(false);
+  const [createAllProgress, setCreateAllProgress] = useState('');
 
   useEffect(() => {
     api
@@ -52,11 +55,56 @@ export default function ShotListPage() {
   }, [projectId, groupBySetup, tab]);
 
   const pdfHref = `/api/projects/${projectId}/shot-list-pdf${groupBySetup ? '?group=setup' : ''}`;
+  const scenesNeedingShots = scenes.filter((s) => !sceneIdsWithShots.has(s.id));
+
+  // Runs AI Suggest Shots for every scene with no shots yet, committing
+  // whatever it suggests without a per-scene review step, same as
+  // Breakdown All Scenes. Scenes with no usable text (AI Suggest Shots
+  // returns an empty list for those) are simply skipped rather than
+  // erroring. Sequential rather than parallel so the progress message stays
+  // meaningful and the AI isn't hit with N simultaneous requests.
+  async function handleCreateAllShotLists() {
+    for (let i = 0; i < scenesNeedingShots.length; i++) {
+      const scene = scenesNeedingShots[i];
+      setCreateAllProgress(
+        t('shotListPage.createAllProgress', {
+          index: i + 1,
+          total: scenesNeedingShots.length,
+          sceneNumber: scene.scene_number,
+          heading: scene.heading || t('breakdownPage.untitled'),
+        })
+      );
+      const { candidates, nextShotNumber } = await api.post(`/scenes/${scene.id}/ai-shots`, {});
+      if (candidates && candidates.length > 0) {
+        await api.post('/shots/bulk', {
+          scene_id: scene.id,
+          shots: candidates.map((c, idx) => ({ ...c, shot_number: String(nextShotNumber + idx) })),
+        });
+        handleSceneShotsChange(scene.id, true);
+      }
+    }
+    setCreateAllProgress('');
+    setShowCreateAll(false);
+  }
 
   return (
     <div>
       <div className="page-header">
         <h2>{t('shotListPage.title')}</h2>
+        {tab === 'scenes' && (
+          <button
+            className="btn btn-secondary"
+            disabled={scenesNeedingShots.length === 0}
+            title={
+              scenesNeedingShots.length === 0
+                ? t('shotListPage.createAllShotListsReady')
+                : t('shotListPage.createAllShotListsTooltip', { count: scenesNeedingShots.length })
+            }
+            onClick={() => setShowCreateAll(true)}
+          >
+            {t('shotListPage.createAllShotLists')}
+          </button>
+        )}
         {tab === 'report' && (
           <div className="flex-row">
             <label
@@ -84,6 +132,19 @@ export default function ShotListPage() {
       </div>
 
       {error && <div className="error-banner">{error}</div>}
+
+      {showCreateAll && (
+        <ConfirmDialog
+          title={t('shotListPage.createAllTitle')}
+          message={t('shotListPage.createAllMessage', { count: scenesNeedingShots.length })}
+          confirmLabel={t('shotListPage.createAllConfirm')}
+          busyLabel={t('shotListPage.creatingAll')}
+          progressMessage={createAllProgress}
+          danger={false}
+          onConfirm={handleCreateAllShotLists}
+          onCancel={() => setShowCreateAll(false)}
+        />
+      )}
 
       {tab === 'scenes' && (
         <>

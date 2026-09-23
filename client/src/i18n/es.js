@@ -246,6 +246,21 @@ export default {
       compositionSetupNotes: 'Composición / Notas de Montaje',
     },
     noShotsYet: 'Aún no hay tomas. Agrega tomas en la pestaña Por Escena, o genera algunas con Crear Lista de Tomas (IA).',
+    createAllShotLists: 'Crear Todas las Listas de Tomas (IA)',
+    createAllShotListsReady: 'Todas las escenas ya tienen al menos una toma',
+    createAllShotListsTooltip: {
+      one: 'Ejecutar IA Sugerir Tomas para 1 escena sin lista de tomas aún',
+      other: 'Ejecutar IA Sugerir Tomas para {{count}} escenas sin lista de tomas aún',
+    },
+    createAllTitle: '¿Crear listas de tomas para todas las escenas?',
+    createAllMessage: {
+      one: 'Esto ejecutará IA Sugerir Tomas en la escena que aún no tenga lista de tomas (1 escena) y agregará lo que sugiera, sin revisar cada una individualmente primero. Aún podrás editar o quitar cualquier toma después.',
+      other:
+        'Esto ejecutará IA Sugerir Tomas en cada escena que aún no tenga lista de tomas ({{count}} escenas) y agregará lo que sugiera, sin revisar cada una individualmente primero. Aún podrás editar o quitar cualquier toma después.',
+    },
+    createAllConfirm: 'Crear Todas las Listas de Tomas',
+    creatingAll: 'Creando...',
+    createAllProgress: 'Escena {{index}} de {{total}}: {{sceneNumber}}. {{heading}}',
   },
 
   sceneShotPanel: {

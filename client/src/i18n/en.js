@@ -247,6 +247,21 @@ export default {
       compositionSetupNotes: 'Composition / Setup Notes',
     },
     noShotsYet: 'No shots yet. Add shots in the By Scene tab, or generate some with Create Shot List (AI).',
+    createAllShotLists: 'Create All Shot Lists (AI)',
+    createAllShotListsReady: 'Every scene already has at least one shot',
+    createAllShotListsTooltip: {
+      one: 'Run AI Suggest Shots for 1 scene without a shot list yet',
+      other: 'Run AI Suggest Shots for {{count}} scenes without a shot list yet',
+    },
+    createAllTitle: 'Create shot lists for all scenes?',
+    createAllMessage: {
+      one: "This will run AI Suggest Shots on the 1 scene that doesn't have a shot list yet and add whatever it suggests, without reviewing each one individually first. You can still edit or remove any shot afterward.",
+      other:
+        "This will run AI Suggest Shots on every scene that doesn't have a shot list yet ({{count}} scenes) and add whatever it suggests, without reviewing each one individually first. You can still edit or remove any shot afterward.",
+    },
+    createAllConfirm: 'Create All Shot Lists',
+    creatingAll: 'Creating...',
+    createAllProgress: 'Scene {{index}} of {{total}}: {{sceneNumber}}. {{heading}}',
   },
 
   sceneShotPanel: {
