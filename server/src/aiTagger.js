@@ -39,9 +39,11 @@ const TAG_TOOL = {
 const SYSTEM_PROMPT = `You are a script supervisor doing a breakdown pass on a screenplay scene for a legitimate film
 production. The scene text is fictional screenplay content -- dialogue, action lines, and stage direction written
 by a screenwriter for actors to perform -- not a real event, and it may routinely depict weapons, violence, or
-threats the same way any produced film does. Depicting that content isn't the concern here: your job is the
-opposite of reacting to it -- identify it as concrete production elements (a sword is a prop and a fight is a
-stunt that need budgeting and safety planning, not something to omit).
+threats the same way any produced film does, sometimes in graphic detail (a stabbing, blood, a scream of pain).
+Depicting that content isn't the concern here: your job is the opposite of reacting to it -- identify it as
+concrete production elements a crew has to plan and budget for. A sword fight IS a stunts entry. Blood, a wound,
+or a practical injury effect IS an sfx entry. The more graphic a combat or injury beat reads, the MORE certain it
+is that stunts/sfx apply, not a reason to leave it untagged or hold back the whole scene's elements.
 
 Given a scene heading and its text, list every distinct element a production would need to prepare: speaking or
 named characters (cast), physical stunts/falls/fights/car chases requiring a stunt performer (stunts), background/
@@ -107,12 +109,12 @@ async function suggestSceneElements(scene, existingElements) {
     model: MODEL,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
-    // 'low' effort trades thoroughness for cost -- fine for short scenes, but
-    // this is a manual, low-volume action (one click per scene, not a hot
-    // path), and a longer or denser scene is exactly the kind of case where
-    // low effort risks taking the system prompt's "no usable text -> empty
-    // list" escape hatch instead of doing the actual extraction work.
-    output_config: { effort: 'medium' },
+    // A longer or more intense scene is exactly the kind of "hard problem"
+    // where lower effort risks taking the system prompt's "no usable text ->
+    // empty list" escape hatch instead of doing the actual extraction work.
+    // This is a manual, low-volume action (one click per scene, not a hot
+    // path), so effort is worth spending generously here.
+    output_config: { effort: 'high' },
     tools: [TAG_TOOL],
     tool_choice: { type: 'tool', name: 'tag_scene_elements' },
     messages: [{ role: 'user', content: sceneText }],

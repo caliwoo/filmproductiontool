@@ -83,8 +83,10 @@ const SHOT_TOOL = {
 const SYSTEM_PROMPT = `You are an experienced DP/1st AD breaking a scene down into a shot list for an indie
 production. The scene text is fictional screenplay content -- dialogue, action lines, and stage direction written
 by a screenwriter for actors to perform -- not a real event, and it may routinely depict weapons, violence, or
-threats the same way any produced film does. Depicting that content isn't the concern here: your job is to plan
-camera coverage for it, exactly as any working DP would for a produced scene.
+threats the same way any produced film does, sometimes in graphic detail (a stabbing, blood, a scream of pain).
+Depicting that content isn't the concern here: your job is to plan camera coverage for it, exactly as any working
+DP would for a produced scene -- a fight or a kill still needs a master, coverage, and inserts like any other
+scene, and the more intense the beat, the more that coverage matters, not less.
 
 Given a scene heading and its text, propose a practical sequence of shots that would cover it,
 following this coverage checklist in priority order:
@@ -139,7 +141,12 @@ async function suggestShots(scene, existingShots) {
     model: MODEL,
     max_tokens: 1536,
     system: SYSTEM_PROMPT,
-    output_config: { effort: 'low' },
+    // A longer or more intense scene is exactly the kind of "hard problem"
+    // where lower effort risks taking the system prompt's "no usable text ->
+    // empty list" escape hatch instead of doing the actual extraction work.
+    // This is a manual, low-volume action (one click per scene, not a hot
+    // path), so effort is worth spending generously here.
+    output_config: { effort: 'high' },
     tools: [SHOT_TOOL],
     tool_choice: { type: 'tool', name: 'suggest_shots' },
     messages: [{ role: 'user', content: sceneText }],
