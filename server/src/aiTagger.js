@@ -107,7 +107,15 @@ async function suggestSceneElements(scene, existingElements) {
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    // Claude Opus 5 runs extended thinking by default (no way to disable it
+    // here without also disabling forced tool_choice), and max_tokens is a
+    // ceiling over thinking + the final tool call combined -- a longer or
+    // denser scene needing more reasoning to extract many elements can burn
+    // through a small budget during thinking alone, stopping the response
+    // with stop_reason 'max_tokens' before it ever emits a tool_use block.
+    // That silently looks identical to a genuine empty result (see the
+    // max_tokens check below), so this is generous on purpose.
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     // A longer or more intense scene is exactly the kind of "hard problem"
     // where lower effort risks taking the system prompt's "no usable text ->
@@ -120,6 +128,10 @@ async function suggestSceneElements(scene, existingElements) {
     messages: [{ role: 'user', content: sceneText }],
   });
 
+  console.log(
+    `[aiTagger] scene ${scene.id}: stop_reason=${response.stop_reason} input_tokens=${response.usage?.input_tokens} output_tokens=${response.usage?.output_tokens}`
+  );
+
   // A safety-classifier refusal has no tool_use block at all -- without this
   // check it looks identical to a deliberate "nothing to tag" empty result,
   // which is actively misleading: the two need different messages (and
@@ -130,6 +142,17 @@ async function suggestSceneElements(scene, existingElements) {
       `Claude declined to analyze this scene${category ? ` (safety category: ${category})` : ''}. This isn't the usual "no elements found" result -- try again, or edit the scene text if it contains something sensitive.`
     );
     err.refused = true;
+    throw err;
+  }
+
+  // Hitting max_tokens mid-thinking (or mid-tool-call) also has no tool_use
+  // block -- same silent-empty-list problem as a refusal, but with a
+  // different fix (raise max_tokens further), so it needs its own message.
+  if (response.stop_reason === 'max_tokens') {
+    const err = new Error(
+      'Claude ran out of response budget analyzing this scene before finishing. This is a bug, not a real "no elements found" result -- please report it.'
+    );
+    err.truncated = true;
     throw err;
   }
 
