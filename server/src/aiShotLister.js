@@ -146,8 +146,13 @@ async function suggestShots(scene, existingShots) {
     // through a small budget during thinking alone, stopping the response
     // with stop_reason 'max_tokens' before it ever emits a tool_use block.
     // That silently looks identical to a genuine empty result (see the
-    // max_tokens check below), so this is generous on purpose.
-    max_tokens: 4096,
+    // max_tokens check below), so this is generous on purpose. Confirmed via
+    // production usage logs: every successful call so far topped out around
+    // 2800 output tokens, but one genuinely long scene hit exactly 4096
+    // (the old ceiling) on every attempt -- 8192 gives real headroom above
+    // that while staying safely non-streaming (no request here has come
+    // close to needing streaming's larger budgets).
+    max_tokens: 8192,
     system: SYSTEM_PROMPT,
     // A longer or more intense scene is exactly the kind of "hard problem"
     // where lower effort risks taking the system prompt's "no usable text ->
