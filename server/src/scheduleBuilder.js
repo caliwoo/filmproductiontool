@@ -143,6 +143,23 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
   const locations = db.prepare('SELECT * FROM locations WHERE project_id = ?').all(projectId);
   const locationById = new Map(locations.map((l) => [l.id, l]));
 
+  // Groups scenes for scheduling by the location's real-world name rather
+  // than its own database row: a production often shoots several different
+  // script locations (e.g. a ship's deck and its hold) on the same physical
+  // set, and gives each of those location rows the same real name once it's
+  // known -- scene_heading (the script-derived slugline text) stays distinct
+  // per row, but name is the user's own "this is actually the same place"
+  // signal. Grouping on it means those rows cluster together and never
+  // trigger a company-move penalty between each other. A location with no
+  // name set yet falls back to its own id, so a pile of not-yet-named
+  // locations don't all wrongly collapse into one shared group.
+  function locationGroupKey(locationId) {
+    if (locationId == null) return 'none';
+    const location = locationById.get(locationId);
+    const name = location && location.name ? location.name.trim().toLowerCase() : '';
+    return name ? `name:${name}` : `id:${locationId}`;
+  }
+
   const elementsByScene = new Map();
   scenes.forEach((s) => {
     elementsByScene.set(s.id, db.prepare('SELECT category, value FROM scene_elements WHERE scene_id = ?').all(s.id));
@@ -173,7 +190,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
   const locationStats = new Map();
   const leadCastByLocation = new Map();
   scenes.forEach((s) => {
-    const key = s.location_id ?? 'none';
+    const key = locationGroupKey(s.location_id);
     const stat = locationStats.get(key) || { hasExt: false, totalComplexity: 0 };
     if (s.int_ext === 'EXT' || s.int_ext === 'INT/EXT') stat.hasExt = true;
     stat.totalComplexity += complexityScore(s.id);
@@ -211,8 +228,8 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
   finalOrder.forEach((key, i) => locationRank.set(key, i));
 
   const ordered = [...scenes].sort((a, b) => {
-    const la = locationRank.get(a.location_id ?? 'none');
-    const lb = locationRank.get(b.location_id ?? 'none');
+    const la = locationRank.get(locationGroupKey(a.location_id));
+    const lb = locationRank.get(locationGroupKey(b.location_id));
     if (la !== lb) return la - lb;
     const dna = dayNightGroup(a.day_night) === 'night' ? 1 : 0;
     const dnb = dayNightGroup(b.day_night) === 'night' ? 1 : 0;
@@ -234,7 +251,7 @@ function buildSchedulePreview(db, projectId, { pagesPerDay = 5, startDate = null
 
   ordered.forEach((scene) => {
     const group = dayNightGroup(scene.day_night);
-    const locKey = scene.location_id ?? 'none';
+    const locKey = locationGroupKey(scene.location_id);
     const pages = Number(scene.page_count) || 0;
     const isLocationChange = current && current.scenes.length > 0 && current.lastLocKey !== locKey;
     const movePenalty = isLocationChange ? LOCATION_MOVE_PAGE_PENALTY : 0;
