@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { getShotListRows, groupRowsBySetup } = require('../shotListData');
 const { renderShotListPdf } = require('../shotListPdf');
+const { renderAllBreakdownsPdf } = require('../breakdownPdf');
 const { buildSchedulePreview, commitSchedule } = require('../scheduleBuilder');
 
 const router = express.Router();
@@ -87,6 +88,46 @@ router.get('/:id/shot-list-pdf', (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="${safeName}-Shot-List.pdf"`);
 
   const doc = renderShotListPdf({ project, rows });
+  doc.pipe(res);
+  doc.end();
+});
+
+// --- All scenes' breakdown sheets, combined into one downloadable packet ---
+
+router.get('/:id/breakdown-pdf', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const scenes = db
+    .prepare('SELECT * FROM scenes WHERE project_id = ? ORDER BY order_index, id')
+    .all(req.params.id);
+
+  // Matches the same readiness gate the per-scene PDF link uses (a scene
+  // needs at least one tagged breakdown element) -- this packet is meant to
+  // combine the breakdown sheets that already exist, not pad itself out with
+  // blank ones for scenes nobody has broken down yet.
+  const dataList = scenes
+    .map((scene) => ({
+      scene,
+      elements: db.prepare('SELECT * FROM scene_elements WHERE scene_id = ? ORDER BY category, id').all(scene.id),
+    }))
+    .filter(({ elements }) => elements.length > 0)
+    .map(({ scene, elements }) => ({
+      project,
+      scene,
+      elements,
+      location: scene.location_id ? db.prepare('SELECT * FROM locations WHERE id = ?').get(scene.location_id) : null,
+    }));
+
+  if (dataList.length === 0) {
+    return res.status(422).json({ error: 'No scenes have a breakdown yet -- tag at least one element first.' });
+  }
+
+  const safeName = project.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'Project';
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${safeName}-Breakdown-Sheets.pdf"`);
+
+  const doc = renderAllBreakdownsPdf(dataList);
   doc.pipe(res);
   doc.end();
 });

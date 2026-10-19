@@ -176,4 +176,16 @@ function renderBreakdownPdf(data) {
   return doc;
 }
 
-module.exports = { renderBreakdownPdf };
+// Same per-scene layout as renderBreakdownPdf, but one sheet per page of a
+// single PDFDocument instead of a document per scene -- for downloading every
+// scene's breakdown sheet as one combined packet.
+function renderAllBreakdownsPdf(dataList) {
+  const doc = new PDFDocument({ size: 'LETTER', margin: MARGIN, bufferPages: true });
+  dataList.forEach((data, i) => {
+    if (i > 0) doc.addPage();
+    generateBreakdownSheet(doc, data);
+  });
+  return doc;
+}
+
+module.exports = { renderBreakdownPdf, renderAllBreakdownsPdf };

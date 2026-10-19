@@ -415,6 +415,12 @@ export default {
     },
     breakdownAllScenes: 'Breakdown All Scenes',
     importScript: 'Import Script (PDF)',
+    downloadAllPdfs: 'Download All PDFs',
+    downloadAllPdfsPending: 'No scenes have a breakdown yet -- tag at least one element first',
+    downloadAllPdfsTooltip: {
+      one: 'Download 1 breakdown sheet as one combined PDF',
+      other: 'Download {{count}} breakdown sheets as one combined PDF',
+    },
     addScenePlaceholder: 'Sc #',
     addSceneHeadingPlaceholder: 'INT. KITCHEN - NIGHT',
     addSceneButton: 'Add Scene',

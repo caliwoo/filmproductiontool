@@ -59,6 +59,7 @@ export default function BreakdownPage() {
 
   const totalPages = scenes.reduce((sum, s) => sum + Number(s.page_count || 0), 0);
   const scenesNeedingBreakdown = scenes.filter((s) => !s.elements || s.elements.length === 0);
+  const scenesWithBreakdown = scenes.filter((s) => s.elements && s.elements.length > 0);
 
   // Runs AI Select for every scene with no breakdown elements yet, committing
   // whatever it suggests without a per-scene review step -- the point of a
@@ -113,6 +114,22 @@ export default function BreakdownPage() {
           <button className="btn btn-secondary" onClick={() => setShowImport(true)}>
             {t('breakdownPage.importScript')}
           </button>
+          <a
+            className="btn btn-secondary"
+            style={{
+              opacity: scenesWithBreakdown.length === 0 ? 0.6 : 1,
+              pointerEvents: scenesWithBreakdown.length === 0 ? 'none' : 'auto',
+            }}
+            href={scenesWithBreakdown.length === 0 ? undefined : `/api/projects/${projectId}/breakdown-pdf`}
+            aria-disabled={scenesWithBreakdown.length === 0}
+            title={
+              scenesWithBreakdown.length === 0
+                ? t('breakdownPage.downloadAllPdfsPending')
+                : t('breakdownPage.downloadAllPdfsTooltip', { count: scenesWithBreakdown.length })
+            }
+          >
+            {t('breakdownPage.downloadAllPdfs')}
+          </a>
         </div>
       </div>
       {error && <div className="error-banner">{error}</div>}

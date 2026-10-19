@@ -414,6 +414,12 @@ export default {
     },
     breakdownAllScenes: 'Desglosar Todas las Escenas',
     importScript: 'Importar Guion (PDF)',
+    downloadAllPdfs: 'Descargar Todos los PDF',
+    downloadAllPdfsPending: 'Ninguna escena tiene desglose todavía -- etiqueta al menos un elemento primero',
+    downloadAllPdfsTooltip: {
+      one: 'Descargar 1 hoja de desglose como un solo PDF combinado',
+      other: 'Descargar {{count}} hojas de desglose como un solo PDF combinado',
+    },
     addScenePlaceholder: 'N.º',
     addSceneHeadingPlaceholder: 'INT. COCINA - NOCHE',
     addSceneButton: 'Agregar Escena',
