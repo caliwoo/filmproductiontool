@@ -1,8 +1,8 @@
+const path = require('path');
+const { Worker } = require('worker_threads');
 const express = require('express');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
 const db = require('../db');
-const { parseScriptLines, extractTitleInfo } = require('../scriptParser');
 const { ensureLocation } = require('../locationSync');
 
 const upload = multer({
@@ -16,65 +16,38 @@ const upload = multer({
 
 const router = express.Router();
 
-// pdf-parse's default text renderer only tracks line breaks (by Y position) --
-// it drops each item's horizontal position entirely, so there's no way to
-// tell a character cue from an action line once the text comes back. This
-// collects each page's lines as `{ text, x }` instead: `x` is the left-edge
-// point-position of a line's first real glyph, read straight from pdf.js's
-// own item geometry (not reconstructed or guessed), which the parser uses to
-// classify each line into a screenplay element type. Lines are gathered into
-// `allLines` via closure rather than returned as pagerender's string, since
-// we need structured data, not text pdf-parse would just concatenate.
-function createPageCollector(allLines) {
-  return function collectPage(pageData) {
-    const renderOptions = { normalizeWhitespace: false, disableCombineTextItems: false };
-    return pageData.getTextContent(renderOptions).then((textContent) => {
-      let lastY = null;
-      let lineText = '';
-      let lineX = null;
-
-      const flushLine = () => {
-        allLines.push({ text: lineText.replace(/\s+/g, ' ').trim(), x: lineX });
-      };
-
-      textContent.items.forEach((item) => {
-        const y = item.transform[5];
-        if (lastY !== null && y !== lastY) {
-          flushLine();
-          lineText = '';
-          lineX = null;
-        }
-        if (lineX === null && item.str.trim() !== '') {
-          lineX = item.transform[4];
-        }
-        lineText += item.str;
-        lastY = y;
-      });
-      if (lastY !== null) flushLine();
-
-      return '';
+// Parsing runs in a worker thread (scriptParseWorker.js), not inline here --
+// a feature-length script's PDF text extraction is CPU-bound enough to block
+// the main event loop for well over Railway's proxy dial timeout, which
+// turns into a 502 even though the server itself never crashed. See that
+// file for the full explanation.
+function parseInWorker(buffer) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(path.join(__dirname, '../scriptParseWorker.js'), {
+      workerData: { buffer },
     });
-  };
+    worker.once('message', (msg) => {
+      worker.terminate();
+      if (msg.ok) resolve(msg.result);
+      else reject(new Error(msg.error));
+    });
+    worker.once('error', (err) => {
+      worker.terminate();
+      reject(err);
+    });
+  });
 }
 
 router.post('/parse', upload.single('script'), async (req, res, next) => {
   if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' });
   try {
-    const allLines = [];
-    const data = await pdfParse(req.file.buffer, { pagerender: createPageCollector(allLines) });
-    const scenes = parseScriptLines(allLines, { numPages: data.numpages });
+    const { scenes, pageCount, suggestedName, suggestedDescription } = await parseInWorker(req.file.buffer);
     if (scenes.length === 0) {
       return res
         .status(422)
         .json({ error: 'No scene headings (INT./EXT.) were detected in this PDF. Is it a screenplay?' });
     }
-    const { title, author } = extractTitleInfo(allLines);
-    res.json({
-      scenes,
-      pageCount: data.numpages,
-      suggestedName: title,
-      suggestedDescription: author ? `Written by ${author}` : null,
-    });
+    res.json({ scenes, pageCount, suggestedName, suggestedDescription });
   } catch (err) {
     next(err);
   }
