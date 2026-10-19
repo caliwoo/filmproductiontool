@@ -1,22 +1,44 @@
-const TIME_OF_DAY = [
-  'CONTINUOUS',
-  'MOMENTS LATER',
-  'SAME TIME',
-  'MORNING',
-  'AFTERNOON',
-  'EVENING',
-  'DAY',
-  'NIGHT',
-  'DAWN',
-  'DUSK',
-  'LATER',
-  'SAME',
-];
+// Canonical day_night value for every recognized time-of-day word/phrase, in
+// both English and Spanish (this parser also has to handle scripts like
+// Spanish-language screenplays, which don't use the English vocabulary at
+// all). Keyed by the exact uppercase (accented, for Spanish) text as it
+// appears in a slugline, so matching a segment is a plain case-insensitive
+// string lookup with no diacritic-stripping needed -- which would otherwise
+// shift character offsets and break the heading-slicing logic below that
+// depends on indices into the original, unmodified text.
+const CANONICAL_DAY_NIGHT = {
+  CONTINUOUS: 'CONTINUOUS',
+  'MOMENTS LATER': 'MOMENTS LATER',
+  'SAME TIME': 'SAME TIME',
+  MORNING: 'MORNING',
+  AFTERNOON: 'AFTERNOON',
+  EVENING: 'EVENING',
+  DAY: 'DAY',
+  NIGHT: 'NIGHT',
+  DAWN: 'DAWN',
+  DUSK: 'DUSK',
+  LATER: 'LATER',
+  SAME: 'SAME',
+  // Spanish
+  DÍA: 'DAY',
+  NOCHE: 'NIGHT',
+  AMANECER: 'DAWN',
+  ATARDECER: 'DUSK',
+  CREPÚSCULO: 'DUSK',
+  'PUESTA DE SOL': 'DUSK',
+  MEDIODÍA: 'DAY',
+  MADRUGADA: 'NIGHT',
+};
+
+const TIME_OF_DAY = Object.keys(CANONICAL_DAY_NIGHT);
 
 const TIME_RE = new RegExp(`[-–—]\\s*(${TIME_OF_DAY.join('|')})\\b`, 'i');
 
 // Optional leading scene number, then INT/EXT (or combined INT/EXT), then the slugline body.
-const HEADING_RE = /^(?:(\d+[A-Za-z]?)[.)\-]?\s+)?(INT\.?\s*\/\s*EXT\.?|EXT\.?\s*\/\s*INT\.?|INT|EXT|I\/E)\.?\s+(.+?)\s*$/i;
+// The separator after INT/EXT tolerates a comma as well as a period --
+// Spanish-convention sluglines ("EXT, DÍA, DESIERTO") punctuate it that way,
+// not with the period-or-nothing the English convention uses.
+const HEADING_RE = /^(?:(\d+[A-Za-z]?)[.)\-]?\s+)?(INT\.?\s*\/\s*EXT\.?|EXT\.?\s*\/\s*INT\.?|INT|EXT|I\/E)[.,]?\s+(.+?)\s*$/i;
 
 // Pure pagination noise -- never real screenplay content, always dropped.
 const PAGE_ARTIFACT_RE = /^(\d+\.?|CONTINUED:?|\(CONTINUED\))$/i;
@@ -166,10 +188,35 @@ function parseScriptLines(lines, { numPages } = {}) {
 
     let heading = body;
     let dayNight = '';
-    const timeMatch = body.match(TIME_RE);
-    if (timeMatch) {
-      heading = body.slice(0, timeMatch.index).replace(/[-–—]\s*$/, '').trim();
-      dayNight = timeMatch[1].toUpperCase();
+
+    // Spanish-convention sluglines separate INT/EXT, time-of-day, and location
+    // with commas (and sometimes periods) rather than the English "LOCATION -
+    // TIME" dash convention, and don't keep a fixed order -- the time word can
+    // come first ("DÍA, DESIERTO") or last ("TAXI EN BARCELONA, DÍA"). Splitting
+    // on every comma/period and picking out whichever segment is exactly a
+    // known time-of-day word handles both orders uniformly; the other segments,
+    // rejoined, are the heading.
+    const segments = body
+      .split(/\s*[,.]\s*/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (segments.length > 1) {
+      const timeIdx = segments.findIndex((seg) => CANONICAL_DAY_NIGHT[seg.toUpperCase()]);
+      if (timeIdx !== -1) {
+        dayNight = CANONICAL_DAY_NIGHT[segments[timeIdx].toUpperCase()];
+        heading = segments.filter((_, i) => i !== timeIdx).join(', ');
+      }
+    }
+
+    // Falls back to the English "LOCATION - TIME" dash convention when the
+    // comma/period split above found nothing (including single-segment
+    // sluglines, which that split never even attempts).
+    if (!dayNight) {
+      const timeMatch = body.match(TIME_RE);
+      if (timeMatch) {
+        heading = body.slice(0, timeMatch.index).replace(/[-–—]\s*$/, '').trim();
+        dayNight = CANONICAL_DAY_NIGHT[timeMatch[1].toUpperCase()] || timeMatch[1].toUpperCase();
+      }
     }
 
     const nextIdx = headings[i + 1] ? headings[i + 1].idx : lines.length;
